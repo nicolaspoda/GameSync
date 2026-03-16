@@ -1,120 +1,207 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useEffect, useMemo, useState } from 'react'
+import { io } from 'socket.io-client'
 import './App.css'
 
+const socket = io('http://localhost:3000')
+
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [username, setUsername] = useState('')
+  const [room, setRoom] = useState('')
+  const [playerNumber, setPlayerNumber] = useState(0)
+  const [error, setError] = useState('')
+  const [joining, setJoining] = useState(false)
+  const [gameState, setGameState] = useState(null)
+
+  const isInGame = useMemo(() => !!room && !!playerNumber && !!gameState, [room, playerNumber, gameState])
+
+  useEffect(() => {
+    const handleGameState = (state) => {
+      setGameState(state)
+    }
+
+    socket.on('gameState', handleGameState)
+
+    return () => {
+      socket.off('gameState', handleGameState)
+    }
+  }, [])
+
+  const handleJoinRoom = () => {
+    const trimmed = username.trim()
+    if (!trimmed) {
+      setError('Merci de saisir un nom d’utilisateur.')
+      return
+    }
+
+    setError('')
+    setJoining(true)
+
+    socket.emit('joinRoom', { username: trimmed, room: room || undefined }, (response) => {
+      setJoining(false)
+      if (!response?.ok) {
+        setError("Impossible de rejoindre la room. Réessaie.")
+        return
+      }
+
+      setRoom(response.room)
+      setPlayerNumber(response.playerNumber)
+      if (response.state) {
+        setGameState(response.state)
+      }
+    })
+  }
+
+  const handleGuess = (letter) => {
+    if (!isInGame || !gameState) return
+    if (gameState.guesses.includes(letter)) return
+    if (gameState.status !== 'playing') return
+    if (gameState.currentPlayer !== playerNumber) return
+
+    socket.emit('guessLetter', { room, letter, playerNumber })
+  }
+
+  const statusLabel = useMemo(() => {
+    if (!gameState) return ''
+    if (gameState.status === 'playing') {
+      if (gameState.currentPlayer === playerNumber) return 'À ton tour !'
+      return "Tour de l'adversaire"
+    }
+    if (gameState.status === 'won') {
+      return gameState.winner === playerNumber ? 'Tu as gagné !' : 'Tu as perdu.'
+    }
+    if (gameState.status === 'lost') {
+      return gameState.winner === playerNumber ? 'Tu as gagné !' : 'Tu as perdu.'
+    }
+    return ''
+  }, [gameState, playerNumber])
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app-root">
+      <header className="app-header">
+        <h1 className="game-title">Burn-out</h1>
+        <p className="game-subtitle">Jeu du pendu à deux joueurs</p>
+      </header>
 
-      <div className="ticks"></div>
+      <main className="app-main">
+        <section className="welcome-card">
+          <h2 className="welcome-title">Rejoins une partie</h2>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          <div className="form-row">
+            <label htmlFor="username" className="form-label">
+              Nom d&apos;utilisateur
+            </label>
+            <input
+              id="username"
+              className="text-input"
+              type="text"
+              placeholder="Ex : PlayerOne"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+          <div className="form-row">
+            <label htmlFor="room" className="form-label">
+              Code de room (optionnel)
+            </label>
+            <input
+              id="room"
+              className="text-input"
+              type="text"
+              placeholder="Laisse vide pour en créer une"
+              value={room}
+              onChange={(e) => setRoom(e.target.value.toUpperCase())}
+            />
+          </div>
+
+          {error && <p className="error-text">{error}</p>}
+
+          <button
+            className="primary-button"
+            type="button"
+            onClick={handleJoinRoom}
+            disabled={joining}
+          >
+            {joining ? 'Connexion...' : 'Créer ou entrer dans une room'}
+          </button>
+
+          {room && (
+            <p className="info-text">
+              Room : <strong>{room}</strong> —{' '}
+              {playerNumber ? `Tu es le joueur ${playerNumber}.` : 'Spectateur.'}
+            </p>
+          )}
+
+          {isInGame && <p className="info-text status-text">{statusLabel}</p>}
+        </section>
+
+        <section className="layout-preview">
+          <div className="hangman-column">
+            <div className="hangman-placeholder">
+              <div className="hangman-label">Joueur 1</div>
+              <div className="hangman-body">
+                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 0 ? 'visible' : ''}`} />
+                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 1 ? 'visible' : ''}`} />
+                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 2 ? 'visible' : ''}`} />
+                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 3 ? 'visible' : ''}`} />
+                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 4 ? 'visible' : ''}`} />
+                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 5 ? 'visible' : ''}`} />
+              </div>
+              <div className="error-count">
+                Erreurs : {gameState?.wrongCounts?.[1] ?? 0} / 6
+              </div>
+            </div>
+          </div>
+
+          <div className="center-column">
+            <div className="word-placeholder">
+              {gameState?.wordMask ?? '_ _ _ _ _'}
+            </div>
+            <div className="alphabet-grid">
+              {ALPHABET.map((letter) => {
+                const already = gameState?.guesses?.includes(letter)
+                const disabled =
+                  !isInGame ||
+                  already ||
+                  gameState?.status !== 'playing' ||
+                  gameState?.currentPlayer !== playerNumber
+
+                return (
+                  <button
+                    key={letter}
+                    type="button"
+                    className={`alpha-button ${already ? 'alpha-used' : ''}`}
+                    disabled={disabled}
+                    onClick={() => handleGuess(letter)}
+                  >
+                    {letter}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="hangman-column">
+            <div className="hangman-placeholder">
+              <div className="hangman-label">Joueur 2</div>
+              <div className="hangman-body">
+                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 0 ? 'visible' : ''}`} />
+                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 1 ? 'visible' : ''}`} />
+                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 2 ? 'visible' : ''}`} />
+                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 3 ? 'visible' : ''}`} />
+                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 4 ? 'visible' : ''}`} />
+                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 5 ? 'visible' : ''}`} />
+              </div>
+              <div className="error-count">
+                Erreurs : {gameState?.wrongCounts?.[2] ?? 0} / 6
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
   )
 }
 
