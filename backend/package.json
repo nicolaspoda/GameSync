@@ -1,8 +1,10 @@
 {
   "name": "gamesync",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/guess-the-draw/index.js",
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "guess-the-draw": "node dist/guess-the-draw/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,5 +14,10 @@
   "dependencies": {
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.6.1",
+    "typescript": "^5.9.3"
   }
 }
