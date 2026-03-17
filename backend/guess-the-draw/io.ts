@@ -11,6 +11,7 @@ import {
   getGuessTheDrawRoomChannel,
   getSocketSession,
 } from "./socket-helpers";
+import { getRandomGuessTheDrawWord, maskGuessTheDrawWord } from "./words";
 import type {
   GuessTheDrawIoOptions,
   GuessTheDrawIoServer,
@@ -18,9 +19,19 @@ import type {
   Message,
   PlayerId,
   RoomState,
+  RoomTimers,
   Round,
   Stroke,
 } from "./types";
+
+const TURN_DURATION_MS = 80_000;
+const NEXT_HINT_DELAY_MS = 25_000;
+const CLEANUP_DURATION_MS = 5_000;
+
+type RoomLifecycleTimers = {
+  cleanupTimeout: NodeJS.Timeout | null;
+  turnTimeout: NodeJS.Timeout | null;
+};
 
 function normalizeGuess(value: string): string {
   return value.trim().toLowerCase();
@@ -38,12 +49,62 @@ function shouldCheckGuessAttribution(
 }
 
 function createInitialRound(drawerId: PlayerId): Round {
+  const word = getRandomGuessTheDrawWord();
+
   return {
     number: 1,
     pointGains: {},
-    word: "",
-    wordMasked: "",
+    word,
+    wordMasked: maskGuessTheDrawWord(word),
     drawerId,
+  };
+}
+
+function createRoundForTurn(drawerId: PlayerId, roundNumber: number): Round {
+  const round = createInitialRound(drawerId);
+  round.number = roundNumber;
+  return round;
+}
+
+function createTurnTimers(now = Date.now()): RoomTimers {
+  return {
+    turnEndsAt: now + TURN_DURATION_MS,
+    nextHintAt: now + NEXT_HINT_DELAY_MS,
+    cleanupEndsAt: null,
+  };
+}
+
+function createCleanupTimers(now = Date.now()): RoomTimers {
+  return {
+    turnEndsAt: null,
+    nextHintAt: null,
+    cleanupEndsAt: now + CLEANUP_DURATION_MS,
+  };
+}
+
+function clearRoomLifecycleTimers(roomTimers: RoomLifecycleTimers) {
+  if (roomTimers.turnTimeout) {
+    clearTimeout(roomTimers.turnTimeout);
+    roomTimers.turnTimeout = null;
+  }
+
+  if (roomTimers.cleanupTimeout) {
+    clearTimeout(roomTimers.cleanupTimeout);
+    roomTimers.cleanupTimeout = null;
+  }
+}
+
+function getPublicRoomState(roomState: RoomState | null): RoomState | null {
+  if (!roomState) {
+    return null;
+  }
+
+  return {
+    ...roomState,
+    round: {
+      ...roomState.round,
+      word: "",
+    },
   };
 }
 
@@ -62,6 +123,191 @@ export function createGuessTheDrawIo(
   }) as GuessTheDrawIoServer;
 
   const sessionStore = options.sessionStore ?? createGuessTheDrawSessionStore();
+  const roomLifecycleTimers = new Map<string, RoomLifecycleTimers>();
+
+  function getRoomLifecycleTimers(roomId: string): RoomLifecycleTimers {
+    if (!roomLifecycleTimers.has(roomId)) {
+      roomLifecycleTimers.set(roomId, {
+        cleanupTimeout: null,
+        turnTimeout: null,
+      });
+    }
+
+    return roomLifecycleTimers.get(roomId)!;
+  }
+
+  function cleanupRoomIfEmpty(roomId: string) {
+    if (sessionStore.getRoomSessions(roomId).length > 0) {
+      return;
+    }
+
+    clearRoomLifecycleTimers(getRoomLifecycleTimers(roomId));
+    roomLifecycleTimers.delete(roomId);
+  }
+
+  function getNextDrawerId(roomId: string, currentDrawerId: string | null) {
+    const joinedSessions = sessionStore.getRoomSessions(roomId);
+
+    if (joinedSessions.length === 0) {
+      return null;
+    }
+
+    if (!currentDrawerId) {
+      return joinedSessions[0].playerId;
+    }
+
+    const currentIndex = joinedSessions.findIndex(
+      (playerSession) => playerSession.playerId === currentDrawerId,
+    );
+
+    if (currentIndex === -1) {
+      return joinedSessions[0].playerId;
+    }
+
+    const nextIndex = (currentIndex + 1) % joinedSessions.length;
+    return joinedSessions[nextIndex].playerId;
+  }
+
+  function getNextTurnContext(roomId: string, currentRoomState: RoomState) {
+    const joinedSessions = sessionStore.getRoomSessions(roomId);
+
+    if (joinedSessions.length === 0) {
+      return null;
+    }
+
+    const currentDrawerId = currentRoomState.drawerId;
+    const currentIndex = joinedSessions.findIndex(
+      (playerSession) => playerSession.playerId === currentDrawerId,
+    );
+
+    if (currentIndex === -1) {
+      return {
+        drawerId: joinedSessions[0].playerId,
+        roundNumber: currentRoomState.round.number || 1,
+      };
+    }
+
+    const nextIndex = (currentIndex + 1) % joinedSessions.length;
+    const wrapped = nextIndex === 0;
+
+    return {
+      drawerId: joinedSessions[nextIndex].playerId,
+      roundNumber: wrapped
+        ? currentRoomState.round.number + 1
+        : currentRoomState.round.number,
+    };
+  }
+
+  function startTurn(roomId: string, drawerId: string, roundNumber: number) {
+    const roomTimers = getRoomLifecycleTimers(roomId);
+    clearRoomLifecycleTimers(roomTimers);
+
+    const round = createRoundForTurn(drawerId, roundNumber);
+
+    sessionStore.clearStrokes(roomId);
+    sessionStore.setRoomState(roomId, {
+      status: "drawing",
+      drawerId,
+      strokes: [],
+      timers: createTurnTimers(),
+    });
+    sessionStore.setRound(roomId, round);
+
+    emitToRoom(
+      io,
+      roomId,
+      guessTheDrawServerEvents.gameStarted,
+      getPublicRoomState(sessionStore.getRoomState(roomId)),
+    );
+    emitToRoom(io, roomId, guessTheDrawServerEvents.turnStarted, round);
+    emitToRoom(
+      io,
+      roomId,
+      guessTheDrawServerEvents.roomState,
+      getPublicRoomState(sessionStore.getRoomState(roomId)),
+    );
+
+    roomTimers.turnTimeout = setTimeout(() => {
+      endTurn(roomId);
+    }, TURN_DURATION_MS);
+  }
+
+  function endTurn(roomId: string) {
+    const currentRoomState = sessionStore.getRoomState(roomId);
+
+    if (!currentRoomState) {
+      return;
+    }
+
+    const roomTimers = getRoomLifecycleTimers(roomId);
+    if (roomTimers.turnTimeout) {
+      clearTimeout(roomTimers.turnTimeout);
+      roomTimers.turnTimeout = null;
+    }
+
+    sessionStore.setRoomState(roomId, {
+      status: "round-results",
+      timers: createCleanupTimers(),
+    });
+
+    emitToRoom(
+      io,
+      roomId,
+      guessTheDrawServerEvents.turnEnded,
+      currentRoomState.round,
+    );
+    emitToRoom(
+      io,
+      roomId,
+      guessTheDrawServerEvents.roomState,
+      getPublicRoomState(sessionStore.getRoomState(roomId)),
+    );
+
+    roomTimers.cleanupTimeout = setTimeout(() => {
+      const nextRoomState = sessionStore.getRoomState(roomId);
+
+      if (!nextRoomState) {
+        return;
+      }
+
+      const nextTurnContext = getNextTurnContext(roomId, nextRoomState);
+
+      if (!nextTurnContext) {
+        return;
+      }
+
+      if (nextTurnContext.roundNumber > nextRoomState.maxRounds) {
+        sessionStore.setRoomState(roomId, {
+          status: "finished",
+          timers: {
+            turnEndsAt: null,
+            nextHintAt: null,
+            cleanupEndsAt: null,
+          },
+        });
+
+        emitToRoom(
+          io,
+          roomId,
+          guessTheDrawServerEvents.gameEnded,
+          nextRoomState.players,
+        );
+        emitToRoom(
+          io,
+          roomId,
+          guessTheDrawServerEvents.roomState,
+          getPublicRoomState(sessionStore.getRoomState(roomId)),
+        );
+        return;
+      }
+
+      startTurn(
+        roomId,
+        nextTurnContext.drawerId,
+        nextTurnContext.roundNumber,
+      );
+    }, CLEANUP_DURATION_MS);
+  }
 
   io.use(createGuessTheDrawSocketAuth(sessionStore));
 
@@ -87,7 +333,7 @@ export function createGuessTheDrawIo(
 
     socket.emit(guessTheDrawServerEvents.connected);
     socket.emit(guessTheDrawServerEvents.roomJoined, {
-      room: roomState,
+      room: getPublicRoomState(roomState),
       selfPlayerId: session.playerId,
     });
 
@@ -95,13 +341,13 @@ export function createGuessTheDrawIo(
       io,
       session.roomId,
       guessTheDrawServerEvents.roomState,
-      roomState,
+      getPublicRoomState(roomState),
     );
     emitToRoom(
       io,
       session.roomId,
       guessTheDrawServerEvents.playerJoined,
-      roomState,
+      getPublicRoomState(roomState),
     );
 
     socket.on(guessTheDrawClientEvents.leaveRoom, () => {
@@ -109,39 +355,25 @@ export function createGuessTheDrawIo(
       socket.leave(playerChannel);
 
       sessionStore.detachSocket(socket.id);
+      sessionStore.revokeSession({
+        roomId: session.roomId,
+        playerId: session.playerId,
+      });
 
       emitToRoom(
         io,
         session.roomId,
         guessTheDrawServerEvents.playerLeft,
-        sessionStore.getRoomState(session.roomId),
+        getPublicRoomState(sessionStore.getRoomState(session.roomId)),
       );
+
+      cleanupRoomIfEmpty(session.roomId);
     });
 
     socket.on(guessTheDrawClientEvents.startGame, () => {
-      const currentRoomState = sessionStore.getRoomState(session.roomId);
-      const players = currentRoomState?.players ?? [];
-      const drawerId = players[0]?.id ?? session.playerId;
-      const round = createInitialRound(drawerId);
-
-      sessionStore.setRoomState(session.roomId, {
-        status: "drawing",
-        drawerId,
-      });
-      sessionStore.setRound(session.roomId, round);
-
-      emitToRoom(
-        io,
-        session.roomId,
-        guessTheDrawServerEvents.gameStarted,
-        sessionStore.getRoomState(session.roomId),
-      );
-      emitToRoom(
-        io,
-        session.roomId,
-        guessTheDrawServerEvents.turnStarted,
-        round,
-      );
+      const drawerId =
+        getNextDrawerId(session.roomId, null) ?? session.playerId;
+      startTurn(session.roomId, drawerId, 1);
     });
 
     socket.on(guessTheDrawClientEvents.sendStroke, (payload: Stroke) => {
@@ -195,10 +427,15 @@ export function createGuessTheDrawIo(
 
         if (isCorrectGuess) {
           const currentScore =
-            currentRoomState.players.find((player) => player.id === session.playerId)
-              ?.score ?? 0;
+            currentRoomState.players.find(
+              (player) => player.id === session.playerId,
+            )?.score ?? 0;
           sessionStore.setPointGain(session.roomId, session.playerId, 100);
-          sessionStore.setPlayerScore(session.roomId, session.playerId, currentScore + 100);
+          sessionStore.setPlayerScore(
+            session.roomId,
+            session.playerId,
+            currentScore + 100,
+          );
         }
 
         const message: Message = {
@@ -222,7 +459,7 @@ export function createGuessTheDrawIo(
           io,
           session.roomId,
           guessTheDrawServerEvents.roomState,
-          sessionStore.getRoomState(session.roomId),
+          getPublicRoomState(sessionStore.getRoomState(session.roomId)),
         );
       },
     );
@@ -234,12 +471,19 @@ export function createGuessTheDrawIo(
         return;
       }
 
+      sessionStore.revokeSession({
+        roomId: detached.roomId,
+        playerId: detached.playerId,
+      });
+
       emitToRoom(
         io,
         detached.roomId,
         guessTheDrawServerEvents.playerLeft,
-        sessionStore.getRoomState(detached.roomId),
+        getPublicRoomState(sessionStore.getRoomState(detached.roomId)),
       );
+
+      cleanupRoomIfEmpty(detached.roomId);
     });
   });
 

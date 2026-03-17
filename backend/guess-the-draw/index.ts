@@ -6,6 +6,11 @@ export { createGuessTheDrawServer } from "./server";
 export { createGuessTheDrawSessionStore } from "./session-store";
 export { createGuessTheDrawSocketAuth } from "./socket-auth";
 export {
+  getRandomGuessTheDrawWord,
+  guessTheDrawWords,
+  maskGuessTheDrawWord,
+} from "./words";
+export {
   emitToPlayer,
   emitToRoom,
   getGuessTheDrawPlayerChannel,

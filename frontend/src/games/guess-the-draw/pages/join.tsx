@@ -1,7 +1,13 @@
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -89,7 +95,6 @@ export default function JoinGuessTheDraw() {
 
       resetGuessTheDrawSocket();
 
-      console.log("Joined random room", data);
       toast.dismiss(loadingToastId);
       toast.success("Random room joined.");
       navigate(`/guess-the-draw/room/${data.roomId}`, {
@@ -97,7 +102,9 @@ export default function JoinGuessTheDraw() {
       });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Unable to join a random room.";
+        error instanceof Error
+          ? error.message
+          : "Unable to join a random room.";
 
       toast.dismiss(loadingToastId);
       toast.error(message);

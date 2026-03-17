@@ -7,6 +7,7 @@ import type {
   Message,
   RoomId,
   RoomState,
+  RoomTimers,
   Round,
   Stroke,
 } from "./types";
@@ -21,12 +22,21 @@ function createDefaultRound(): Round {
   };
 }
 
+function createDefaultTimers(): RoomTimers {
+  return {
+    turnEndsAt: null,
+    nextHintAt: null,
+    cleanupEndsAt: null,
+  };
+}
+
 function createDefaultRoomState(roomId: RoomId): RoomState {
   return {
     id: roomId,
     status: "waiting",
     maxRounds: 3,
     maxPlayers: 8,
+    timers: createDefaultTimers(),
     round: createDefaultRound(),
     players: [],
     drawerId: null,

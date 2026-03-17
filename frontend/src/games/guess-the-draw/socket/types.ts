@@ -22,6 +22,12 @@ export type Round = {
   drawerId: PlayerId;
 };
 
+export type RoomTimers = {
+  turnEndsAt: number | null;
+  nextHintAt: number | null;
+  cleanupEndsAt: number | null;
+};
+
 export type Message = {
   playerId: PlayerId;
   message: string;
@@ -46,6 +52,7 @@ export type RoomState = {
   status: GamePhase;
   maxRounds: number;
   maxPlayers: number;
+  timers: RoomTimers;
   round: Round;
   players: PlayerSummary[];
   drawerId: PlayerId | null;

@@ -25,6 +25,12 @@ export type Round = {
   drawerId: PlayerId;
 };
 
+export type RoomTimers = {
+  turnEndsAt: number | null;
+  nextHintAt: number | null;
+  cleanupEndsAt: number | null;
+};
+
 export type Message = {
   playerId: PlayerId;
   message: string;
@@ -49,6 +55,7 @@ export type RoomState = {
   status: GamePhase;
   maxRounds: number;
   maxPlayers: number;
+  timers: RoomTimers;
   round: Round;
   players: PlayerSummary[];
   drawerId: PlayerId | null;
@@ -116,7 +123,10 @@ export type GuessTheDrawClientEventsMap = {
 
 export type GuessTheDrawServerEventsMap = {
   "system:connected": () => void;
-  "room:joined": (payload: { room: RoomState | null; selfPlayerId: PlayerId }) => void;
+  "room:joined": (payload: {
+    room: RoomState | null;
+    selfPlayerId: PlayerId;
+  }) => void;
   "room:state": (payload: RoomState | null) => void;
   "player:joined": (payload: RoomState | null) => void;
   "player:left": (payload: RoomState | null) => void;
@@ -146,16 +156,31 @@ export type GuessTheDrawIoServer = Server<
 export type GuessTheDrawSessionStore = {
   addMessage: (roomId: RoomId, message: Message) => Message[];
   addStroke: (roomId: RoomId, stroke: Stroke) => Stroke[];
-  attachSocketToSession: (input: AttachSocketToSessionInput) => RoomState | null;
+  attachSocketToSession: (
+    input: AttachSocketToSessionInput,
+  ) => RoomState | null;
   clearStrokes: (roomId: RoomId) => Stroke[];
-  detachSocket: (socketId: string) => { roomId: RoomId; playerId: PlayerId } | null;
+  detachSocket: (
+    socketId: string,
+  ) => { roomId: RoomId; playerId: PlayerId } | null;
   getRoomSessions: (roomId: RoomId) => StoredGuessTheDrawSession[];
   getRoomState: (roomId: RoomId) => RoomState | null;
   registerSession: (session: GuessTheDrawSession) => RoomState | null;
   revokeSession: (input: { roomId: RoomId; playerId: PlayerId }) => boolean;
-  setPlayerScore: (roomId: RoomId, playerId: PlayerId, score: number) => RoomState | null;
-  setPointGain: (roomId: RoomId, playerId: PlayerId, points: number) => Round | null;
-  setRoomState: (roomId: RoomId, partialState: Partial<RoomState>) => RoomState | null;
+  setPlayerScore: (
+    roomId: RoomId,
+    playerId: PlayerId,
+    score: number,
+  ) => RoomState | null;
+  setPointGain: (
+    roomId: RoomId,
+    playerId: PlayerId,
+    points: number,
+  ) => Round | null;
+  setRoomState: (
+    roomId: RoomId,
+    partialState: Partial<RoomState>,
+  ) => RoomState | null;
   setRound: (roomId: RoomId, round: Round) => Round;
   validateSession: (
     input: GuessTheDrawSessionValidationInput,

@@ -9,10 +9,12 @@ import {
   guessTheDrawServerEvents,
   sendDrawingStroke,
   sendMessage,
+  startGuessTheDrawGame,
   useGuessTheDrawSocket,
   type GuessTheDrawSession,
   type Message,
   type Point,
+  type Round,
   type RoomState,
   type Stroke,
 } from "@/games/guess-the-draw/socket";
@@ -23,11 +25,32 @@ type GuessTheDrawRoomLocationState = {
   session?: GuessTheDrawSession;
 };
 
-function WaitingPill() {
+function StatusPill({ status }: { status: RoomState["status"] | "connecting" }) {
+  const variants = {
+    connecting: "border-sky-300 bg-sky-100 text-sky-800",
+    waiting: "border-amber-300 bg-amber-100 text-amber-800",
+    drawing: "border-emerald-300 bg-emerald-100 text-emerald-800",
+    "round-results": "border-orange-300 bg-orange-100 text-orange-800",
+    finished: "border-stone-300 bg-stone-200 text-stone-700",
+  } as const;
+
+  const labels = {
+    connecting: "Connecting",
+    waiting: "Waiting",
+    drawing: "Drawing",
+    "round-results": "Cleanup",
+    finished: "Finished",
+  } as const;
+
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-amber-800">
-      <span className="size-2 rounded-full bg-amber-500" />
-      Waiting
+    <div
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-[0.24em]",
+        variants[status],
+      )}
+    >
+      <span className="size-2 rounded-full bg-current" />
+      {labels[status]}
     </div>
   );
 }
@@ -67,11 +90,13 @@ export default function GuessTheDrawRoom() {
   const currentStrokePointsRef = useRef<Point[]>([]);
 
   const [roomState, setRoomState] = useState<RoomState | null>(null);
+  const [activeTurn, setActiveTurn] = useState<Round | null>(null);
   const [connectionLabel, setConnectionLabel] = useState("Connecting");
   const [chatInput, setChatInput] = useState("");
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [brushColor, setBrushColor] = useState("#1f2937");
   const [brushSize, setBrushSize] = useState(4);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     if (!session) {
@@ -94,6 +119,14 @@ export default function GuessTheDrawRoom() {
       setConnectionLabel("Connected");
     }
 
+    function handleTurnStarted(nextTurn: Round) {
+      setActiveTurn(nextTurn);
+    }
+
+    function handleTurnEnded() {
+      setActiveTurn(null);
+    }
+
     function handleCanvasUpdated(nextStrokes: Stroke[]) {
       setStrokes(nextStrokes);
     }
@@ -113,6 +146,8 @@ export default function GuessTheDrawRoom() {
     socket.on(guessTheDrawServerEvents.playerJoined, handleRoomState);
     socket.on(guessTheDrawServerEvents.playerLeft, handleRoomState);
     socket.on(guessTheDrawServerEvents.gameStarted, handleRoomState);
+    socket.on(guessTheDrawServerEvents.turnStarted, handleTurnStarted);
+    socket.on(guessTheDrawServerEvents.turnEnded, handleTurnEnded);
     socket.on(guessTheDrawServerEvents.canvasUpdated, handleCanvasUpdated);
     socket.on(guessTheDrawServerEvents.error, handleSocketError);
     socket.on("connect_error", handleConnectError);
@@ -123,11 +158,23 @@ export default function GuessTheDrawRoom() {
       socket.off(guessTheDrawServerEvents.playerJoined, handleRoomState);
       socket.off(guessTheDrawServerEvents.playerLeft, handleRoomState);
       socket.off(guessTheDrawServerEvents.gameStarted, handleRoomState);
+      socket.off(guessTheDrawServerEvents.turnStarted, handleTurnStarted);
+      socket.off(guessTheDrawServerEvents.turnEnded, handleTurnEnded);
       socket.off(guessTheDrawServerEvents.canvasUpdated, handleCanvasUpdated);
       socket.off(guessTheDrawServerEvents.error, handleSocketError);
       socket.off("connect_error", handleConnectError);
     };
   }, [session, socket]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -182,6 +229,32 @@ export default function GuessTheDrawRoom() {
   const messages = roomState?.messages ?? [];
   const activeRoomId = roomState?.id ?? roomId ?? session?.roomId ?? "Unknown";
   const selfPlayerId = session?.playerId ?? null;
+  const selfPlayer = players.find((player) => player.id === selfPlayerId) ?? null;
+  const isHost = Boolean(selfPlayer?.isHost);
+  const isWaiting = roomState?.status === "waiting";
+  const currentDrawer = players.find((player) => player.id === roomState?.drawerId) ?? null;
+  const isSelfDrawing =
+    Boolean(selfPlayerId) &&
+    (activeTurn?.drawerId ?? roomState?.drawerId ?? null) === selfPlayerId;
+  const activeStatus = roomState?.status ?? "connecting";
+
+  const activeTimerTarget =
+    roomState?.status === "drawing"
+      ? roomState.timers?.turnEndsAt ?? null
+      : roomState?.status === "round-results"
+        ? roomState.timers?.cleanupEndsAt ?? null
+        : null;
+
+  const timerSeconds =
+    activeTimerTarget && activeTimerTarget > now
+      ? Math.ceil((activeTimerTarget - now) / 1000)
+      : 0;
+  const roundNumber = roomState?.round.number ?? 1;
+  const totalRounds = roomState?.maxRounds ?? 1;
+  const displayedWord =
+    isSelfDrawing && activeTurn?.word?.trim()
+      ? activeTurn.word
+      : roomState?.round.wordMasked?.trim() || "No word yet";
 
   function handleSendMessage() {
     const trimmedMessage = chatInput.trim();
@@ -291,6 +364,15 @@ export default function GuessTheDrawRoom() {
     }
   }
 
+  function handleStartGame() {
+    try {
+      startGuessTheDrawGame();
+    } catch (error) {
+      console.error("Unable to start game", error);
+      toast.error("Unable to start the game.");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,205,120,0.18),_transparent_28%),linear-gradient(180deg,_#fcf8f1_0%,_#f4eee5_100%)] px-6 py-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -308,8 +390,22 @@ export default function GuessTheDrawRoom() {
             </div>
 
             <div className="flex flex-col items-start gap-2 sm:items-end">
-              <WaitingPill />
+              <StatusPill status={activeStatus} />
               <p className="text-sm text-stone-500">{connectionLabel}</p>
+              {currentDrawer ? (
+                <p className="text-sm font-medium text-stone-700">
+                  Drawing: {currentDrawer.usernamename}
+                </p>
+              ) : null}
+              {activeTimerTarget ? (
+                <p className="text-sm text-stone-500">
+                  {roomState?.status === "drawing" ? "Turn ends" : "Next turn"} in{" "}
+                  {timerSeconds}s
+                </p>
+              ) : null}
+              {isHost && isWaiting ? (
+                <Button onClick={handleStartGame}>Start game</Button>
+              ) : null}
             </div>
           </CardHeader>
         </Card>
@@ -327,13 +423,44 @@ export default function GuessTheDrawRoom() {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.8fr)_minmax(320px,1fr)]">
             <div className="grid gap-6">
               <Card className="border border-stone-200/80 bg-white/90 shadow-[0_16px_50px_rgba(60,42,17,0.08)]">
-                <CardHeader>
-                  <CardTitle className="text-xl text-stone-900">
-                    Canvas
-                  </CardTitle>
-                  <CardDescription>
-                    Shared drawing board. For now, anyone in the room can draw.
-                  </CardDescription>
+                <CardHeader className="gap-4">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-stone-500">
+                        <span>Round {roundNumber}/{totalRounds}</span>
+                        {currentDrawer ? (
+                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 tracking-normal text-emerald-700">
+                            {currentDrawer.usernamename} draws
+                          </span>
+                        ) : null}
+                      </div>
+                      <CardTitle className="text-xl text-stone-900">
+                        {roomState?.status === "drawing" ? "Turn in progress" : "Board ready"}
+                      </CardTitle>
+                      <CardDescription className="text-sm leading-6 text-stone-600">
+                        {roomState?.status === "drawing"
+                          ? "Everyone can draw for now while the turn system is taking shape."
+                          : "The board stays open between turns so everyone can see the current state."}
+                      </CardDescription>
+                    </div>
+
+                    <div className="grid min-w-[220px] gap-2 rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
+                      <div className="flex items-center justify-between gap-4 text-sm">
+                        <span className="text-stone-500">Timer</span>
+                        <span className="font-medium text-stone-900">
+                          {activeTimerTarget ? `${timerSeconds}s` : "--"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4 text-sm">
+                        <span className="text-stone-500">
+                          {isSelfDrawing ? "Word" : "Hint"}
+                        </span>
+                        <span className="font-mono text-base tracking-[0.24em] text-stone-900">
+                          {displayedWord}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex flex-wrap items-center gap-3">
@@ -426,6 +553,11 @@ export default function GuessTheDrawRoom() {
                           {player.id === selfPlayerId ? (
                             <span className="rounded-full bg-sky-100 px-2.5 py-1 font-medium text-sky-700">
                               You
+                            </span>
+                          ) : null}
+                          {player.id === roomState?.drawerId ? (
+                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-medium text-emerald-700">
+                              Drawing
                             </span>
                           ) : null}
                           {player.isHost ? (
