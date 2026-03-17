@@ -153,6 +153,8 @@ export type GuessTheDrawSessionStore = {
   getRoomState: (roomId: RoomId) => RoomState | null;
   registerSession: (session: GuessTheDrawSession) => RoomState | null;
   revokeSession: (input: { roomId: RoomId; playerId: PlayerId }) => boolean;
+  setPlayerScore: (roomId: RoomId, playerId: PlayerId, score: number) => RoomState | null;
+  setPointGain: (roomId: RoomId, playerId: PlayerId, points: number) => Round | null;
   setRoomState: (roomId: RoomId, partialState: Partial<RoomState>) => RoomState | null;
   setRound: (roomId: RoomId, round: Round) => Round;
   validateSession: (

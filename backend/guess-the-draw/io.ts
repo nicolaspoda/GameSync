@@ -22,6 +22,21 @@ import type {
   Stroke,
 } from "./types";
 
+function normalizeGuess(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function shouldCheckGuessAttribution(
+  roomState: RoomState,
+  playerId: PlayerId,
+): boolean {
+  return (
+    roomState.status === "drawing" &&
+    playerId !== roomState.round.drawerId &&
+    roomState.round.pointGains[playerId] === undefined
+  );
+}
+
 function createInitialRound(drawerId: PlayerId): Round {
   return {
     number: 1,
@@ -157,14 +172,43 @@ export function createGuessTheDrawIo(
     socket.on(
       guessTheDrawClientEvents.submitGuess,
       (payload: { guess: string }) => {
+        const guess = payload.guess.trim();
+
+        if (!guess) {
+          return;
+        }
+
+        const currentRoomState = sessionStore.getRoomState(session.roomId);
+
+        if (!currentRoomState) {
+          return;
+        }
+
+        const shouldCheckGuess = shouldCheckGuessAttribution(
+          currentRoomState,
+          session.playerId,
+        );
+        const isCorrectGuess =
+          shouldCheckGuess &&
+          normalizeGuess(currentRoomState.round.word) !== "" &&
+          normalizeGuess(currentRoomState.round.word) === normalizeGuess(guess);
+
+        if (isCorrectGuess) {
+          const currentScore =
+            currentRoomState.players.find((player) => player.id === session.playerId)
+              ?.score ?? 0;
+          sessionStore.setPointGain(session.roomId, session.playerId, 100);
+          sessionStore.setPlayerScore(session.roomId, session.playerId, currentScore + 100);
+        }
+
         const message: Message = {
           playerId: session.playerId,
-          message: payload.guess,
+          message: guess,
           username:
             session.metadata?.username ??
             session.metadata?.playerName ??
             session.playerId,
-          guessed: false,
+          guessed: isCorrectGuess,
         };
 
         sessionStore.addMessage(session.roomId, message);

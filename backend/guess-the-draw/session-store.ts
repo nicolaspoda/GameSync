@@ -186,6 +186,52 @@ export function createGuessTheDrawSessionStore(): GuessTheDrawSessionStore {
     return room.state.round;
   }
 
+  function setPointGain(roomId: RoomId, playerId: string, points: number): Round | null {
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      return null;
+    }
+
+    room.state.round = {
+      ...room.state.round,
+      pointGains: {
+        ...room.state.round.pointGains,
+        [playerId]: points,
+      },
+    };
+
+    return room.state.round;
+  }
+
+  function setPlayerScore(
+    roomId: RoomId,
+    playerId: string,
+    score: number,
+  ): RoomState | null {
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      return null;
+    }
+
+    const player = room.players.get(playerId);
+
+    if (!player) {
+      return null;
+    }
+
+    room.players.set(playerId, {
+      ...player,
+      metadata: {
+        ...player.metadata,
+        score,
+      },
+    });
+
+    return syncRoomPlayers(roomId);
+  }
+
   function addStroke(roomId: RoomId, stroke: Stroke): Stroke[] {
     const room = getOrCreateRoom(roomId);
     room.state.strokes = [...room.state.strokes, stroke];
@@ -214,6 +260,8 @@ export function createGuessTheDrawSessionStore(): GuessTheDrawSessionStore {
     getRoomState,
     registerSession,
     revokeSession,
+    setPlayerScore,
+    setPointGain,
     setRoomState,
     setRound,
     validateSession,

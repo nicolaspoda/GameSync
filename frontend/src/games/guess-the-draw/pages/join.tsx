@@ -5,8 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  connectGuessTheDrawSocket,
-  guessTheDrawServerEvents,
   resetGuessTheDrawSocket,
   type GuessTheDrawSession,
 } from "@/games/guess-the-draw/socket";
@@ -90,27 +88,13 @@ export default function JoinGuessTheDraw() {
       }
 
       resetGuessTheDrawSocket();
-      const socket = connectGuessTheDrawSocket(data);
-
-      socket.once(guessTheDrawServerEvents.connected, () => {
-        console.log("Guess The Draw socket connected", {
-          session: data,
-          socketId: socket.id,
-        });
-
-        navigate(`/guess-the-draw/room/${data.roomId}`, {
-          state: { session: data },
-        });
-      });
-
-      socket.once("connect_error", (error) => {
-        console.error("Guess The Draw socket connection error", error);
-        toast.error("Joined the room, but the socket connection failed.");
-      });
 
       console.log("Joined random room", data);
       toast.dismiss(loadingToastId);
       toast.success("Random room joined.");
+      navigate(`/guess-the-draw/room/${data.roomId}`, {
+        state: { session: data },
+      });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to join a random room.";

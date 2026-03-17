@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 
-import { connectGuessTheDrawSocket } from "./client";
+import {
+  connectGuessTheDrawSocket,
+  initializeGuessTheDrawSocket,
+} from "./client";
 import type { GuessTheDrawSocket } from "./client";
 import type { GuessTheDrawSession } from "./types";
 
@@ -14,6 +17,10 @@ export function useGuessTheDrawSocket(
 ) {
   const { session = null, autoConnect = true } = options;
   const socketRef = useRef<GuessTheDrawSocket | null>(null);
+
+  if (session && !socketRef.current) {
+    socketRef.current = initializeGuessTheDrawSocket(session);
+  }
 
   useEffect(() => {
     if (!autoConnect || !session) {

@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   guessTheDrawServerEvents,
+  sendMessage,
   useGuessTheDrawSocket,
   type GuessTheDrawSession,
   type Message,
@@ -58,6 +61,7 @@ export default function GuessTheDrawRoom() {
 
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [connectionLabel, setConnectionLabel] = useState("Connecting");
+  const [chatInput, setChatInput] = useState("");
 
   useEffect(() => {
     if (!session) {
@@ -111,6 +115,22 @@ export default function GuessTheDrawRoom() {
   const players = roomState?.players ?? [];
   const messages = roomState?.messages ?? [];
   const activeRoomId = roomState?.id ?? roomId ?? session?.roomId ?? "Unknown";
+
+  function handleSendMessage() {
+    const trimmedMessage = chatInput.trim();
+
+    if (!trimmedMessage) {
+      return;
+    }
+
+    try {
+      sendMessage({ guess: trimmedMessage });
+      setChatInput("");
+    } catch (error) {
+      console.error("Unable to send chat message", error);
+      toast.error("Unable to send the chat message.");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,205,120,0.18),_transparent_28%),linear-gradient(180deg,_#fcf8f1_0%,_#f4eee5_100%)] px-6 py-8">
@@ -226,7 +246,8 @@ export default function GuessTheDrawRoom() {
               <CardHeader>
                 <CardTitle className="text-xl text-stone-900">Chat</CardTitle>
                 <CardDescription>
-                  Waiting-room messages and future guesses will show here.
+                  Waiting-room messages and future guesses will show here. Chat
+                  stays usable even before the turn starts.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -235,7 +256,12 @@ export default function GuessTheDrawRoom() {
                     messages.map((message: Message, index) => (
                       <div
                         key={`${message.playerId}-${index}`}
-                        className="rounded-2xl bg-white px-3 py-2 shadow-sm ring-1 ring-black/5"
+                        className={cn(
+                          "rounded-2xl px-3 py-2 shadow-sm ring-1 ring-black/5",
+                          message.guessed
+                            ? "bg-emerald-50 text-emerald-900 ring-emerald-200"
+                            : "bg-white",
+                        )}
                       >
                         <p className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
                           {message.username}
@@ -252,6 +278,26 @@ export default function GuessTheDrawRoom() {
                       className="min-h-full flex-1"
                     />
                   )}
+
+                  <div className="mt-auto flex gap-2 pt-2">
+                    <Input
+                      placeholder="Send a message to the room"
+                      value={chatInput}
+                      onChange={(event) => setChatInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!session || chatInput.trim().length === 0}
+                    >
+                      Send
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

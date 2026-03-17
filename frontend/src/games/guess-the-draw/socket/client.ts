@@ -117,11 +117,18 @@ function ensureSocketInstance(
   return socketInstance;
 }
 
+export function initializeGuessTheDrawSocket(
+  session: GuessTheDrawSession,
+  options: GuessTheDrawSocketOptions = {},
+) {
+  return ensureSocketInstance(session, options);
+}
+
 export function connectGuessTheDrawSocket(
   session: GuessTheDrawSession,
   options: GuessTheDrawSocketOptions = {},
 ) {
-  const socket = ensureSocketInstance(session, options);
+  const socket = initializeGuessTheDrawSocket(session, options);
 
   if (!socket.connected) {
     socket.connect();
