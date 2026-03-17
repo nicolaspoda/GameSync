@@ -1,11 +1,15 @@
 import http from "node:http";
 
 import express, { type Express } from "express";
+import cors from "cors";
 
 import { createGuessTheDrawIo } from "./io";
 import { createGuessTheDrawRoomRegistry } from "./room-registry";
 import { createGuessTheDrawRoutes } from "./routes";
-import type { GuessTheDrawServerInstance, GuessTheDrawServerOptions } from "./types";
+import type {
+  GuessTheDrawServerInstance,
+  GuessTheDrawServerOptions,
+} from "./types";
 
 export function createGuessTheDrawServer(
   options: GuessTheDrawServerOptions = {},
@@ -15,6 +19,7 @@ export function createGuessTheDrawServer(
   const { io, sessionStore } = createGuessTheDrawIo(httpServer, options.socket);
   const roomRegistry = createGuessTheDrawRoomRegistry(sessionStore);
 
+  app.use(cors());
   app.use(express.json());
   app.use(
     "/guess-the-draw",
