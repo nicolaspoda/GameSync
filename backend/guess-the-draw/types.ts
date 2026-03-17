@@ -1,5 +1,5 @@
 import type { Server as HttpServer } from "node:http";
-import type { Express } from "express";
+import type { Express, Router } from "express";
 import type { Server, Socket } from "socket.io";
 
 export type PlayerId = string;
@@ -7,6 +7,7 @@ export type RoomId = string;
 export type PlayerToken = string;
 
 export type GamePhase = "waiting" | "drawing" | "round-results" | "finished";
+export type RoomVisibility = "public" | "private";
 
 export type PlayerSummary = {
   id: PlayerId;
@@ -62,6 +63,7 @@ export type GuessTheDrawSessionMetadata = {
   isHost?: boolean;
   maxRounds?: number;
   maxPlayers?: number;
+  visibility?: RoomVisibility;
 };
 
 export type GuessTheDrawSession = {
@@ -164,6 +166,45 @@ export type GuessTheDrawIoOptions = {
   sessionStore?: GuessTheDrawSessionStore;
 };
 
+export type GuessTheDrawRoomRecord = {
+  id: RoomId;
+  visibility: RoomVisibility;
+  maxPlayers: number;
+  maxRounds: number;
+  createdAt: number;
+};
+
+export type GuessTheDrawRoomRegistry = {
+  createRoom: (input: {
+    visibility: RoomVisibility;
+    maxPlayers: number;
+    maxRounds: number;
+  }) => GuessTheDrawRoomRecord;
+  getRoom: (roomId: RoomId) => GuessTheDrawRoomRecord | null;
+  findJoinablePublicRoom: () => GuessTheDrawRoomRecord | null;
+};
+
+export type CreatePrivateRoomRequest = {
+  playerName: string;
+  maxPlayers: number;
+  rounds: number;
+};
+
+export type JoinPrivateRoomRequest = {
+  playerName: string;
+  roomId: RoomId;
+};
+
+export type JoinRandomPublicRoomRequest = {
+  playerName: string;
+};
+
+export type GuessTheDrawAuthResponse = {
+  playerId: PlayerId;
+  roomId: RoomId;
+  token: PlayerToken;
+};
+
 export type GuessTheDrawServerOptions = {
   socket?: GuessTheDrawIoOptions;
 };
@@ -173,9 +214,19 @@ export type GuessTheDrawServerInstance = {
   httpServer: HttpServer;
   io: GuessTheDrawIoServer;
   sessionStore: GuessTheDrawSessionStore;
+  roomRegistry: GuessTheDrawRoomRegistry;
 };
 
 export type GuessTheDrawSocketMiddleware = (
   socket: GuessTheDrawSocket,
   next: (err?: Error) => void,
 ) => void;
+
+export type GuessTheDrawRoutesDependencies = {
+  roomRegistry: GuessTheDrawRoomRegistry;
+  sessionStore: GuessTheDrawSessionStore;
+};
+
+export type GuessTheDrawRoutesFactory = (
+  dependencies: GuessTheDrawRoutesDependencies,
+) => Router;

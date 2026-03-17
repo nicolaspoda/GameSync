@@ -24,7 +24,7 @@ function createDefaultRound(): Round {
 function createDefaultRoomState(roomId: RoomId): RoomState {
   return {
     id: roomId,
-    status: "drawing",
+    status: "waiting",
     maxRounds: 3,
     maxPlayers: 8,
     round: createDefaultRound(),

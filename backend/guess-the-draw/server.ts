@@ -3,6 +3,8 @@ import http from "node:http";
 import express, { type Express } from "express";
 
 import { createGuessTheDrawIo } from "./io";
+import { createGuessTheDrawRoomRegistry } from "./room-registry";
+import { createGuessTheDrawRoutes } from "./routes";
 import type { GuessTheDrawServerInstance, GuessTheDrawServerOptions } from "./types";
 
 export function createGuessTheDrawServer(
@@ -11,8 +13,13 @@ export function createGuessTheDrawServer(
   const app: Express = express();
   const httpServer = http.createServer(app);
   const { io, sessionStore } = createGuessTheDrawIo(httpServer, options.socket);
+  const roomRegistry = createGuessTheDrawRoomRegistry(sessionStore);
 
   app.use(express.json());
+  app.use(
+    "/guess-the-draw",
+    createGuessTheDrawRoutes({ roomRegistry, sessionStore }),
+  );
 
   app.get("/health", (_request, response) => {
     response.json({ ok: true });
@@ -23,6 +30,7 @@ export function createGuessTheDrawServer(
     httpServer,
     io,
     sessionStore,
+    roomRegistry,
   };
 }
 
