@@ -377,6 +377,12 @@ export function createGuessTheDrawIo(
     });
 
     socket.on(guessTheDrawClientEvents.sendStroke, (payload: Stroke) => {
+      const currentRoomState = sessionStore.getRoomState(session.roomId);
+
+      if (!currentRoomState || currentRoomState.drawerId !== session.playerId) {
+        return;
+      }
+
       const strokes = sessionStore.addStroke(session.roomId, {
         ...payload,
         byPlayerId: session.playerId,
@@ -391,6 +397,12 @@ export function createGuessTheDrawIo(
     });
 
     socket.on(guessTheDrawClientEvents.clearCanvas, () => {
+      const currentRoomState = sessionStore.getRoomState(session.roomId);
+
+      if (!currentRoomState || currentRoomState.drawerId !== session.playerId) {
+        return;
+      }
+
       const strokes = sessionStore.clearStrokes(session.roomId);
 
       emitToRoom(

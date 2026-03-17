@@ -288,6 +288,10 @@ export default function GuessTheDrawRoom() {
   }
 
   function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
+    if (!isSelfDrawing) {
+      return;
+    }
+
     const point = getCanvasPoint(event);
 
     if (!point) {
@@ -299,6 +303,10 @@ export default function GuessTheDrawRoom() {
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
+    if (!isSelfDrawing) {
+      return;
+    }
+
     if (!isDrawingRef.current) {
       return;
     }
@@ -325,6 +333,12 @@ export default function GuessTheDrawRoom() {
   }
 
   function finishStroke() {
+    if (!isSelfDrawing) {
+      isDrawingRef.current = false;
+      currentStrokePointsRef.current = [];
+      return;
+    }
+
     if (!isDrawingRef.current) {
       return;
     }
@@ -356,6 +370,10 @@ export default function GuessTheDrawRoom() {
   }
 
   function handleClearCanvas() {
+    if (!isSelfDrawing) {
+      return;
+    }
+
     try {
       clearDrawingCanvas();
     } catch (error) {
@@ -490,7 +508,11 @@ export default function GuessTheDrawRoom() {
                       </span>
                     </label>
 
-                    <Button variant="outline" onClick={handleClearCanvas}>
+                    <Button
+                      variant="outline"
+                      onClick={handleClearCanvas}
+                      disabled={!isSelfDrawing}
+                    >
                       Clear canvas
                     </Button>
                   </div>
@@ -498,13 +520,21 @@ export default function GuessTheDrawRoom() {
                   <div className="rounded-2xl border border-stone-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(247,241,231,0.92))] p-3">
                     <canvas
                       ref={canvasRef}
-                      className="block h-[360px] w-full touch-none rounded-xl bg-white shadow-inner"
+                      className={cn(
+                        "block h-[360px] w-full rounded-xl bg-white shadow-inner",
+                        isSelfDrawing ? "cursor-crosshair touch-none" : "cursor-not-allowed opacity-90",
+                      )}
                       onPointerDown={handlePointerDown}
                       onPointerMove={handlePointerMove}
                       onPointerUp={finishStroke}
                       onPointerLeave={finishStroke}
                     />
                   </div>
+                  {!isSelfDrawing ? (
+                    <p className="text-sm text-stone-500">
+                      Only the active drawer can draw right now.
+                    </p>
+                  ) : null}
                 </CardContent>
               </Card>
 
