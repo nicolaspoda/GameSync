@@ -1,16 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
+  clearDrawingCanvas,
   guessTheDrawServerEvents,
+  sendDrawingStroke,
   sendMessage,
   useGuessTheDrawSocket,
   type GuessTheDrawSession,
   type Message,
+  type Point,
   type RoomState,
+  type Stroke,
 } from "@/games/guess-the-draw/socket";
 import { useLocation, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -58,10 +62,16 @@ export default function GuessTheDrawRoom() {
   const locationState = (location.state ?? null) as GuessTheDrawRoomLocationState | null;
   const session = locationState?.session ?? null;
   const socket = useGuessTheDrawSocket({ session });
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isDrawingRef = useRef(false);
+  const currentStrokePointsRef = useRef<Point[]>([]);
 
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [connectionLabel, setConnectionLabel] = useState("Connecting");
   const [chatInput, setChatInput] = useState("");
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [brushColor, setBrushColor] = useState("#1f2937");
+  const [brushSize, setBrushSize] = useState(4);
 
   useEffect(() => {
     if (!session) {
@@ -80,7 +90,12 @@ export default function GuessTheDrawRoom() {
 
     function handleRoomState(nextRoomState: RoomState) {
       setRoomState(nextRoomState);
+      setStrokes(nextRoomState.strokes ?? []);
       setConnectionLabel("Connected");
+    }
+
+    function handleCanvasUpdated(nextStrokes: Stroke[]) {
+      setStrokes(nextStrokes);
     }
 
     function handleSocketError(error: { message: string }) {
@@ -98,6 +113,7 @@ export default function GuessTheDrawRoom() {
     socket.on(guessTheDrawServerEvents.playerJoined, handleRoomState);
     socket.on(guessTheDrawServerEvents.playerLeft, handleRoomState);
     socket.on(guessTheDrawServerEvents.gameStarted, handleRoomState);
+    socket.on(guessTheDrawServerEvents.canvasUpdated, handleCanvasUpdated);
     socket.on(guessTheDrawServerEvents.error, handleSocketError);
     socket.on("connect_error", handleConnectError);
 
@@ -107,14 +123,65 @@ export default function GuessTheDrawRoom() {
       socket.off(guessTheDrawServerEvents.playerJoined, handleRoomState);
       socket.off(guessTheDrawServerEvents.playerLeft, handleRoomState);
       socket.off(guessTheDrawServerEvents.gameStarted, handleRoomState);
+      socket.off(guessTheDrawServerEvents.canvasUpdated, handleCanvasUpdated);
       socket.off(guessTheDrawServerEvents.error, handleSocketError);
       socket.off("connect_error", handleConnectError);
     };
   }, [session, socket]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return;
+    }
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * devicePixelRatio;
+    canvas.height = rect.height * devicePixelRatio;
+    context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    context.clearRect(0, 0, rect.width, rect.height);
+    context.lineCap = "round";
+    context.lineJoin = "round";
+
+    for (const stroke of strokes) {
+      if (stroke.points.length === 0) {
+        continue;
+      }
+
+      context.beginPath();
+      context.strokeStyle = stroke.color;
+      context.lineWidth = stroke.size;
+
+      stroke.points.forEach((point, index) => {
+        if (index === 0) {
+          context.moveTo(point.x, point.y);
+          return;
+        }
+
+        context.lineTo(point.x, point.y);
+      });
+
+      if (stroke.points.length === 1) {
+        const point = stroke.points[0];
+        context.lineTo(point.x + 0.01, point.y + 0.01);
+      }
+
+      context.stroke();
+    }
+  }, [strokes]);
+
   const players = roomState?.players ?? [];
   const messages = roomState?.messages ?? [];
   const activeRoomId = roomState?.id ?? roomId ?? session?.roomId ?? "Unknown";
+  const selfPlayerId = session?.playerId ?? null;
 
   function handleSendMessage() {
     const trimmedMessage = chatInput.trim();
@@ -129,6 +196,98 @@ export default function GuessTheDrawRoom() {
     } catch (error) {
       console.error("Unable to send chat message", error);
       toast.error("Unable to send the chat message.");
+    }
+  }
+
+  function getCanvasPoint(event: React.PointerEvent<HTMLCanvasElement>): Point | null {
+    const canvas = canvasRef.current;
+
+    if (!canvas) {
+      return null;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+  }
+
+  function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
+    const point = getCanvasPoint(event);
+
+    if (!point) {
+      return;
+    }
+
+    isDrawingRef.current = true;
+    currentStrokePointsRef.current = [point];
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
+    if (!isDrawingRef.current) {
+      return;
+    }
+
+    const point = getCanvasPoint(event);
+
+    if (!point) {
+      return;
+    }
+
+    currentStrokePointsRef.current = [...currentStrokePointsRef.current, point];
+
+    const previewStroke: Stroke = {
+      byPlayerId: selfPlayerId ?? "local-player",
+      color: brushColor,
+      size: brushSize,
+      points: currentStrokePointsRef.current,
+    };
+
+    setStrokes((currentStrokes) => [
+      ...currentStrokes.filter((stroke) => stroke.byPlayerId !== "__preview__"),
+      { ...previewStroke, byPlayerId: "__preview__" },
+    ]);
+  }
+
+  function finishStroke() {
+    if (!isDrawingRef.current) {
+      return;
+    }
+
+    isDrawingRef.current = false;
+
+    const points = currentStrokePointsRef.current;
+    currentStrokePointsRef.current = [];
+
+    setStrokes((currentStrokes) =>
+      currentStrokes.filter((stroke) => stroke.byPlayerId !== "__preview__"),
+    );
+
+    if (points.length === 0) {
+      return;
+    }
+
+    try {
+      sendDrawingStroke({
+        byPlayerId: selfPlayerId ?? "",
+        color: brushColor,
+        size: brushSize,
+        points,
+      });
+    } catch (error) {
+      console.error("Unable to send drawing stroke", error);
+      toast.error("Unable to sync the drawing stroke.");
+    }
+  }
+
+  function handleClearCanvas() {
+    try {
+      clearDrawingCanvas();
+    } catch (error) {
+      console.error("Unable to clear canvas", error);
+      toast.error("Unable to clear the canvas.");
     }
   }
 
@@ -173,16 +332,52 @@ export default function GuessTheDrawRoom() {
                     Canvas
                   </CardTitle>
                   <CardDescription>
-                    Drawing area placeholder while the room is waiting for the game
-                    to start.
+                    Shared drawing board. For now, anyone in the room can draw.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <EmptyState
-                    className="min-h-[360px] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(247,241,231,0.92))]"
-                    title="Canvas is idle"
-                    description="Once a round begins, this panel can host the collaborative whiteboard."
-                  />
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
+                      <span>Color</span>
+                      <input
+                        aria-label="Brush color"
+                        type="color"
+                        value={brushColor}
+                        onChange={(event) => setBrushColor(event.target.value)}
+                        className="h-8 w-10 cursor-pointer rounded border-0 bg-transparent p-0"
+                      />
+                    </label>
+
+                    <label className="flex items-center gap-3 rounded-full border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
+                      <span>Size</span>
+                      <input
+                        aria-label="Brush size"
+                        type="range"
+                        min="2"
+                        max="16"
+                        value={brushSize}
+                        onChange={(event) => setBrushSize(Number(event.target.value))}
+                      />
+                      <span className="w-5 text-right text-xs text-stone-500">
+                        {brushSize}
+                      </span>
+                    </label>
+
+                    <Button variant="outline" onClick={handleClearCanvas}>
+                      Clear canvas
+                    </Button>
+                  </div>
+
+                  <div className="rounded-2xl border border-stone-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(247,241,231,0.92))] p-3">
+                    <canvas
+                      ref={canvasRef}
+                      className="block h-[360px] w-full touch-none rounded-xl bg-white shadow-inner"
+                      onPointerDown={handlePointerDown}
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={finishStroke}
+                      onPointerLeave={finishStroke}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
@@ -200,7 +395,12 @@ export default function GuessTheDrawRoom() {
                     players.map((player) => (
                       <div
                         key={player.id}
-                        className="rounded-2xl border border-stone-200 bg-stone-50/80 p-4"
+                        className={cn(
+                          "rounded-2xl border p-4",
+                          player.id === selfPlayerId
+                            ? "border-amber-300 bg-amber-50/90 shadow-[0_10px_30px_rgba(245,158,11,0.12)]"
+                            : "border-stone-200 bg-stone-50/80",
+                        )}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -223,6 +423,11 @@ export default function GuessTheDrawRoom() {
                           </span>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2 text-xs text-stone-500">
+                          {player.id === selfPlayerId ? (
+                            <span className="rounded-full bg-sky-100 px-2.5 py-1 font-medium text-sky-700">
+                              You
+                            </span>
+                          ) : null}
                           {player.isHost ? (
                             <span className="rounded-full bg-amber-100 px-2.5 py-1 font-medium text-amber-700">
                               Host
