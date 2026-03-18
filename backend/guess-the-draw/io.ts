@@ -372,7 +372,11 @@ export function createGuessTheDrawIo(
     return joinedSessions[nextIndex].playerId;
   }
 
-  function getNextTurnContext(roomId: string, currentRoomState: RoomState) {
+  function getNextTurnContext(
+    roomId: string,
+    currentRoomState: RoomState,
+    previousJoinOrder?: PlayerId[],
+  ) {
     const joinedSessions = sessionStore.getRoomSessions(roomId);
 
     if (joinedSessions.length === 0) {
@@ -385,6 +389,27 @@ export function createGuessTheDrawIo(
     );
 
     if (currentIndex === -1) {
+      if (currentDrawerId && previousJoinOrder?.includes(currentDrawerId)) {
+        const previousIndex = previousJoinOrder.findIndex(
+          (playerId) => playerId === currentDrawerId,
+        );
+        const remainingJoinOrder = previousJoinOrder.filter((playerId) =>
+          joinedSessions.some((playerSession) => playerSession.playerId === playerId),
+        );
+
+        if (remainingJoinOrder.length > 0) {
+          const nextIndex = previousIndex % remainingJoinOrder.length;
+          const wrapped = nextIndex === 0;
+
+          return {
+            drawerId: remainingJoinOrder[nextIndex],
+            roundNumber: wrapped
+              ? currentRoomState.round.number + 1
+              : currentRoomState.round.number,
+          };
+        }
+      }
+
       return {
         drawerId: joinedSessions[0].playerId,
         roundNumber: currentRoomState.round.number || 1,
@@ -544,7 +569,10 @@ export function createGuessTheDrawIo(
     emitRoomStateToActivePlayers(roomId, guessTheDrawServerEvents.roomState);
   }
 
-  function endTurn(roomId: string) {
+  function endTurn(
+    roomId: string,
+    nextTurnOverride?: { drawerId: string; roundNumber: number } | null,
+  ) {
     const currentRoomState = sessionStore.getRoomState(roomId);
 
     if (!currentRoomState) {
@@ -582,7 +610,8 @@ export function createGuessTheDrawIo(
         return;
       }
 
-      const nextTurnContext = getNextTurnContext(roomId, nextRoomState);
+      const nextTurnContext =
+        nextTurnOverride ?? getNextTurnContext(roomId, nextRoomState);
 
       if (!nextTurnContext) {
         return;
@@ -603,6 +632,9 @@ export function createGuessTheDrawIo(
 
   function handlePlayerDeparture(roomId: string, playerId: string) {
     const previousRoomState = sessionStore.getRoomState(roomId);
+    const previousJoinOrder = sessionStore
+      .getRoomSessions(roomId)
+      .map((playerSession) => playerSession.playerId);
     const departingPlayer = previousRoomState?.players.find(
       (player) => player.id === playerId,
     );
@@ -639,7 +671,24 @@ export function createGuessTheDrawIo(
       previousRoomState?.status === "drawing" &&
       previousRoomState.drawerId === playerId
     ) {
-      endTurn(roomId);
+      const roomStateAfterDeparture = sessionStore.getRoomState(roomId);
+      const nextTurnContext = roomStateAfterDeparture
+        ? getNextTurnContext(
+            roomId,
+            {
+              ...roomStateAfterDeparture,
+              drawerId: previousRoomState.drawerId,
+              round: {
+                ...roomStateAfterDeparture.round,
+                drawerId: previousRoomState.round.drawerId,
+                number: previousRoomState.round.number,
+              },
+            },
+            previousJoinOrder,
+          )
+        : null;
+
+      endTurn(roomId, nextTurnContext ?? undefined);
       return;
     }
 
