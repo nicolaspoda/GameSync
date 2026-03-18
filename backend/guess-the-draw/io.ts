@@ -37,6 +37,25 @@ function normalizeGuess(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function getGuesserPoints(roomState: RoomState): number {
+  const turnEndsAt = roomState.timers.turnEndsAt;
+
+  if (!turnEndsAt) {
+    return 100;
+  }
+
+  const remainingSeconds = Math.max(
+    1,
+    Math.ceil((turnEndsAt - Date.now()) / 1000),
+  );
+
+  return remainingSeconds * 5;
+}
+
+function getDrawerPoints(guesserPoints: number): number {
+  return Math.max(50, Math.floor(guesserPoints * 0.6));
+}
+
 function shouldCheckGuessAttribution(
   roomState: RoomState,
   playerId: PlayerId,
@@ -45,6 +64,20 @@ function shouldCheckGuessAttribution(
     roomState.status === "drawing" &&
     playerId !== roomState.round.drawerId &&
     roomState.round.pointGains[playerId] === undefined
+  );
+}
+
+function haveAllGuessersFinished(roomState: RoomState): boolean {
+  const eligibleGuessers = roomState.players.filter(
+    (player) => player.id !== roomState.round.drawerId,
+  );
+
+  if (eligibleGuessers.length === 0) {
+    return false;
+  }
+
+  return eligibleGuessers.every(
+    (player) => roomState.round.pointGains[player.id] !== undefined,
   );
 }
 
@@ -438,16 +471,42 @@ export function createGuessTheDrawIo(
           normalizeGuess(currentRoomState.round.word) === normalizeGuess(guess);
 
         if (isCorrectGuess) {
+          const guesserPoints = getGuesserPoints(currentRoomState);
+          const drawerId = currentRoomState.round.drawerId;
+          const drawerPoints = getDrawerPoints(guesserPoints);
           const currentScore =
             currentRoomState.players.find(
               (player) => player.id === session.playerId,
             )?.score ?? 0;
-          sessionStore.setPointGain(session.roomId, session.playerId, 100);
+          const currentDrawerScore =
+            currentRoomState.players.find((player) => player.id === drawerId)?.score ??
+            0;
+          const currentDrawerRoundGain =
+            currentRoomState.round.pointGains[drawerId] ?? 0;
+
+          sessionStore.setPointGain(
+            session.roomId,
+            session.playerId,
+            guesserPoints,
+          );
           sessionStore.setPlayerScore(
             session.roomId,
             session.playerId,
-            currentScore + 100,
+            currentScore + guesserPoints,
           );
+
+          if (drawerId) {
+            sessionStore.setPointGain(
+              session.roomId,
+              drawerId,
+              currentDrawerRoundGain + drawerPoints,
+            );
+            sessionStore.setPlayerScore(
+              session.roomId,
+              drawerId,
+              currentDrawerScore + drawerPoints,
+            );
+          }
         }
 
         const message: Message = {
@@ -473,6 +532,12 @@ export function createGuessTheDrawIo(
           guessTheDrawServerEvents.roomState,
           getPublicRoomState(sessionStore.getRoomState(session.roomId)),
         );
+
+        const updatedRoomState = sessionStore.getRoomState(session.roomId);
+
+        if (isCorrectGuess && updatedRoomState && haveAllGuessersFinished(updatedRoomState)) {
+          endTurn(session.roomId);
+        }
       },
     );
 

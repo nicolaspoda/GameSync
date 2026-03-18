@@ -255,6 +255,14 @@ export default function GuessTheDrawRoom() {
     isSelfDrawing && activeTurn?.word?.trim()
       ? activeTurn.word
       : roomState?.round.wordMasked?.trim() || "No word yet";
+  const roundPointGains = Object.entries(roomState?.round.pointGains ?? {})
+    .map(([playerId, points]) => ({
+      playerId,
+      points,
+      playerName:
+        players.find((player) => player.id === playerId)?.usernamename ?? playerId,
+    }))
+    .sort((left, right) => right.points - left.points);
 
   function handleSendMessage() {
     const trimmedMessage = chatInput.trim();
@@ -518,17 +526,55 @@ export default function GuessTheDrawRoom() {
                   </div>
 
                   <div className="rounded-2xl border border-stone-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(247,241,231,0.92))] p-3">
-                    <canvas
-                      ref={canvasRef}
-                      className={cn(
-                        "block h-[360px] w-full rounded-xl bg-white shadow-inner",
-                        isSelfDrawing ? "cursor-crosshair touch-none" : "cursor-not-allowed opacity-90",
-                      )}
-                      onPointerDown={handlePointerDown}
-                      onPointerMove={handlePointerMove}
-                      onPointerUp={finishStroke}
-                      onPointerLeave={finishStroke}
-                    />
+                    <div className="relative">
+                      <canvas
+                        ref={canvasRef}
+                        className={cn(
+                          "block h-[360px] w-full rounded-xl bg-white shadow-inner",
+                          isSelfDrawing
+                            ? "cursor-crosshair touch-none"
+                            : "cursor-not-allowed opacity-90",
+                        )}
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={finishStroke}
+                        onPointerLeave={finishStroke}
+                      />
+
+                      {roomState?.status === "round-results" ? (
+                        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-stone-950/40 p-4 backdrop-blur-sm">
+                          <div className="w-full max-w-sm rounded-3xl border border-white/20 bg-white/85 p-5 text-stone-900 shadow-2xl">
+                            <p className="text-xs font-medium uppercase tracking-[0.24em] text-stone-500">
+                              Cleanup
+                            </p>
+                            <h3 className="mt-2 text-2xl font-semibold">
+                              Round point gains
+                            </h3>
+                            <div className="mt-4 grid gap-3">
+                              {roundPointGains.length > 0 ? (
+                                roundPointGains.map((entry) => (
+                                  <div
+                                    key={entry.playerId}
+                                    className="flex items-center justify-between rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-black/5"
+                                  >
+                                    <span className="text-sm font-medium">
+                                      {entry.playerName}
+                                    </span>
+                                    <span className="text-sm font-semibold text-emerald-700">
+                                      +{entry.points}
+                                    </span>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="rounded-2xl bg-white/80 px-4 py-3 text-sm text-stone-600 ring-1 ring-black/5">
+                                  No points were earned this turn.
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                   {!isSelfDrawing ? (
                     <p className="text-sm text-stone-500">
