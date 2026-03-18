@@ -268,13 +268,11 @@ export default function GuessTheDrawRoom() {
     isSelfDrawing && activeTurn?.word?.trim()
       ? activeTurn.word
       : roomState?.round.wordMasked?.trim() || "No word yet";
-  const roundPointGains = Object.entries(roomState?.round.pointGains ?? {})
-    .map(([playerId, points]) => ({
-      playerId,
-      points,
-      playerName:
-        players.find((player) => player.id === playerId)?.usernamename ??
-        playerId,
+  const roundPointGains = players
+    .map((player) => ({
+      playerId: player.id,
+      playerName: player.usernamename,
+      points: roomState?.round.pointGains[player.id] ?? 0,
     }))
     .sort((left, right) => right.points - left.points);
   const finalStandings = [...players].sort(
@@ -576,25 +574,26 @@ export default function GuessTheDrawRoom() {
                               Round point gains
                             </h3>
                             <div className="mt-4 grid gap-3">
-                              {roundPointGains.length > 0 ? (
-                                roundPointGains.map((entry) => (
-                                  <div
-                                    key={entry.playerId}
-                                    className="flex items-center justify-between rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-black/5"
+                              {roundPointGains.map((entry) => (
+                                <div
+                                  key={entry.playerId}
+                                  className="flex items-center justify-between rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-black/5"
+                                >
+                                  <span className="text-sm font-medium">
+                                    {entry.playerName}
+                                  </span>
+                                  <span
+                                    className={cn(
+                                      "text-sm font-semibold",
+                                      entry.points > 0
+                                        ? "text-emerald-700"
+                                        : "text-rose-600",
+                                    )}
                                   >
-                                    <span className="text-sm font-medium">
-                                      {entry.playerName}
-                                    </span>
-                                    <span className="text-sm font-semibold text-emerald-700">
-                                      +{entry.points}
-                                    </span>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="rounded-2xl bg-white/80 px-4 py-3 text-sm text-stone-600 ring-1 ring-black/5">
-                                  No points were earned this turn.
+                                    +{entry.points}
+                                  </span>
                                 </div>
-                              )}
+                              ))}
                             </div>
                           </div>
                         </div>
