@@ -265,6 +265,27 @@ export function createGuessTheDrawIo(
     }, TURN_DURATION_MS);
   }
 
+  function resetGame(roomId: string) {
+    const joinedSessions = sessionStore.getRoomSessions(roomId);
+
+    for (const playerSession of joinedSessions) {
+      sessionStore.setPlayerScore(roomId, playerSession.playerId, 0);
+    }
+
+    sessionStore.clearStrokes(roomId);
+    sessionStore.setRoomState(roomId, {
+      status: "waiting",
+      drawerId: null,
+      messages: [],
+      strokes: [],
+      timers: {
+        turnEndsAt: null,
+        nextHintAt: null,
+        cleanupEndsAt: null,
+      },
+    });
+  }
+
   function endTurn(roomId: string) {
     const currentRoomState = sessionStore.getRoomState(roomId);
 
@@ -404,6 +425,7 @@ export function createGuessTheDrawIo(
     });
 
     socket.on(guessTheDrawClientEvents.startGame, () => {
+      resetGame(session.roomId);
       const drawerId =
         getNextDrawerId(session.roomId, null) ?? session.playerId;
       startTurn(session.roomId, drawerId, 1);

@@ -605,6 +605,14 @@ export default function GuessTheDrawRoom() {
                                 </div>
                               ))}
                             </div>
+                            {isHost ? (
+                              <Button
+                                className="mt-5 w-full"
+                                onClick={handleStartGame}
+                              >
+                                Replay
+                              </Button>
+                            ) : null}
                           </div>
                         </div>
                       ) : null}
