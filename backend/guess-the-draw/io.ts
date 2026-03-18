@@ -30,6 +30,7 @@ const CLEANUP_DURATION_MS = 5_000;
 
 type RoomLifecycleTimers = {
   cleanupTimeout: NodeJS.Timeout | null;
+  hintTimeout: NodeJS.Timeout | null;
   turnTimeout: NodeJS.Timeout | null;
 };
 
@@ -115,10 +116,36 @@ function createCleanupTimers(now = Date.now()): RoomTimers {
   };
 }
 
+function revealNextHint(word: string, maskedWord: string): string {
+  const revealableIndexes = word
+    .split("")
+    .map((character, index) => ({ character, index }))
+    .filter(({ character, index }) => character !== " " && maskedWord[index] === "_");
+
+  if (revealableIndexes.length === 0) {
+    return maskedWord;
+  }
+
+  const randomIndex = Math.floor(Math.random() * revealableIndexes.length);
+  const selectedHint = revealableIndexes[randomIndex];
+
+  return maskedWord
+    .split("")
+    .map((character, index) =>
+      index === selectedHint.index ? word[index] : character,
+    )
+    .join("");
+}
+
 function clearRoomLifecycleTimers(roomTimers: RoomLifecycleTimers) {
   if (roomTimers.turnTimeout) {
     clearTimeout(roomTimers.turnTimeout);
     roomTimers.turnTimeout = null;
+  }
+
+  if (roomTimers.hintTimeout) {
+    clearTimeout(roomTimers.hintTimeout);
+    roomTimers.hintTimeout = null;
   }
 
   if (roomTimers.cleanupTimeout) {
@@ -162,6 +189,7 @@ export function createGuessTheDrawIo(
     if (!roomLifecycleTimers.has(roomId)) {
       roomLifecycleTimers.set(roomId, {
         cleanupTimeout: null,
+        hintTimeout: null,
         turnTimeout: null,
       });
     }
@@ -260,9 +288,82 @@ export function createGuessTheDrawIo(
       getPublicRoomState(sessionStore.getRoomState(roomId)),
     );
 
+    roomTimers.hintTimeout = setTimeout(() => {
+      triggerHint(roomId);
+    }, NEXT_HINT_DELAY_MS);
+
     roomTimers.turnTimeout = setTimeout(() => {
       endTurn(roomId);
     }, TURN_DURATION_MS);
+  }
+
+  function triggerHint(roomId: string) {
+    const currentRoomState = sessionStore.getRoomState(roomId);
+
+    if (!currentRoomState || currentRoomState.status !== "drawing") {
+      return;
+    }
+
+    const roomTimers = getRoomLifecycleTimers(roomId);
+    const nextMaskedWord = revealNextHint(
+      currentRoomState.round.word,
+      currentRoomState.round.wordMasked,
+    );
+
+    if (nextMaskedWord === currentRoomState.round.wordMasked) {
+      sessionStore.setRoomState(roomId, {
+        timers: {
+          ...currentRoomState.timers,
+          nextHintAt: null,
+        },
+      });
+      emitToRoom(
+        io,
+        roomId,
+        guessTheDrawServerEvents.roomState,
+        getPublicRoomState(sessionStore.getRoomState(roomId)),
+      );
+      roomTimers.hintTimeout = null;
+      return;
+    }
+
+    sessionStore.setRound(roomId, {
+      ...currentRoomState.round,
+      wordMasked: nextMaskedWord,
+    });
+
+    const updatedRoomState = sessionStore.getRoomState(roomId);
+    const turnEndsAt = updatedRoomState?.timers.turnEndsAt ?? null;
+    const hasTimeForAnotherHint =
+      turnEndsAt !== null && turnEndsAt - Date.now() > NEXT_HINT_DELAY_MS;
+    const hasMoreLettersToReveal = nextMaskedWord.includes("_");
+
+    sessionStore.setRoomState(roomId, {
+      timers: {
+        turnEndsAt: updatedRoomState?.timers.turnEndsAt ?? null,
+        nextHintAt:
+          hasTimeForAnotherHint && hasMoreLettersToReveal
+            ? Date.now() + NEXT_HINT_DELAY_MS
+            : null,
+        cleanupEndsAt: updatedRoomState?.timers.cleanupEndsAt ?? null,
+      },
+    });
+
+    emitToRoom(
+      io,
+      roomId,
+      guessTheDrawServerEvents.roomState,
+      getPublicRoomState(sessionStore.getRoomState(roomId)),
+    );
+
+    if (hasTimeForAnotherHint && hasMoreLettersToReveal) {
+      roomTimers.hintTimeout = setTimeout(() => {
+        triggerHint(roomId);
+      }, NEXT_HINT_DELAY_MS);
+      return;
+    }
+
+    roomTimers.hintTimeout = null;
   }
 
   function resetGame(roomId: string) {

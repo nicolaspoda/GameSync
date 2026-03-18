@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
@@ -25,7 +31,11 @@ type GuessTheDrawRoomLocationState = {
   session?: GuessTheDrawSession;
 };
 
-function StatusPill({ status }: { status: RoomState["status"] | "connecting" }) {
+function StatusPill({
+  status,
+}: {
+  status: RoomState["status"] | "connecting";
+}) {
   const variants = {
     connecting: "border-sky-300 bg-sky-100 text-sky-800",
     waiting: "border-amber-300 bg-amber-100 text-amber-800",
@@ -82,7 +92,8 @@ function EmptyState({
 export default function GuessTheDrawRoom() {
   const { roomId } = useParams();
   const location = useLocation();
-  const locationState = (location.state ?? null) as GuessTheDrawRoomLocationState | null;
+  const locationState = (location.state ??
+    null) as GuessTheDrawRoomLocationState | null;
   const session = locationState?.session ?? null;
   const socket = useGuessTheDrawSocket({ session });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -229,10 +240,12 @@ export default function GuessTheDrawRoom() {
   const messages = roomState?.messages ?? [];
   const activeRoomId = roomState?.id ?? roomId ?? session?.roomId ?? "Unknown";
   const selfPlayerId = session?.playerId ?? null;
-  const selfPlayer = players.find((player) => player.id === selfPlayerId) ?? null;
+  const selfPlayer =
+    players.find((player) => player.id === selfPlayerId) ?? null;
   const isHost = Boolean(selfPlayer?.isHost);
   const isWaiting = roomState?.status === "waiting";
-  const currentDrawer = players.find((player) => player.id === roomState?.drawerId) ?? null;
+  const currentDrawer =
+    players.find((player) => player.id === roomState?.drawerId) ?? null;
   const isSelfDrawing =
     Boolean(selfPlayerId) &&
     (activeTurn?.drawerId ?? roomState?.drawerId ?? null) === selfPlayerId;
@@ -240,9 +253,9 @@ export default function GuessTheDrawRoom() {
 
   const activeTimerTarget =
     roomState?.status === "drawing"
-      ? roomState.timers?.turnEndsAt ?? null
+      ? (roomState.timers?.turnEndsAt ?? null)
       : roomState?.status === "round-results"
-        ? roomState.timers?.cleanupEndsAt ?? null
+        ? (roomState.timers?.cleanupEndsAt ?? null)
         : null;
 
   const timerSeconds =
@@ -260,10 +273,13 @@ export default function GuessTheDrawRoom() {
       playerId,
       points,
       playerName:
-        players.find((player) => player.id === playerId)?.usernamename ?? playerId,
+        players.find((player) => player.id === playerId)?.usernamename ??
+        playerId,
     }))
     .sort((left, right) => right.points - left.points);
-  const finalStandings = [...players].sort((left, right) => right.score - left.score);
+  const finalStandings = [...players].sort(
+    (left, right) => right.score - left.score,
+  );
 
   function handleSendMessage() {
     const trimmedMessage = chatInput.trim();
@@ -281,7 +297,9 @@ export default function GuessTheDrawRoom() {
     }
   }
 
-  function getCanvasPoint(event: React.PointerEvent<HTMLCanvasElement>): Point | null {
+  function getCanvasPoint(
+    event: React.PointerEvent<HTMLCanvasElement>,
+  ): Point | null {
     const canvas = canvasRef.current;
 
     if (!canvas) {
@@ -426,8 +444,8 @@ export default function GuessTheDrawRoom() {
               ) : null}
               {activeTimerTarget ? (
                 <p className="text-sm text-stone-500">
-                  {roomState?.status === "drawing" ? "Turn ends" : "Next turn"} in{" "}
-                  {timerSeconds}s
+                  {roomState?.status === "drawing" ? "Turn ends" : "Next turn"}{" "}
+                  in {timerSeconds}s
                 </p>
               ) : null}
               {isHost && isWaiting ? (
@@ -454,7 +472,9 @@ export default function GuessTheDrawRoom() {
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-stone-500">
-                        <span>Round {roundNumber}/{totalRounds}</span>
+                        <span>
+                          Round {roundNumber}/{totalRounds}
+                        </span>
                         {currentDrawer ? (
                           <span className="rounded-full bg-emerald-100 px-2.5 py-1 tracking-normal text-emerald-700">
                             {currentDrawer.usernamename} draws
@@ -462,7 +482,9 @@ export default function GuessTheDrawRoom() {
                         ) : null}
                       </div>
                       <CardTitle className="text-xl text-stone-900">
-                        {roomState?.status === "drawing" ? "Turn in progress" : "Board ready"}
+                        {roomState?.status === "drawing"
+                          ? "Turn in progress"
+                          : "Board ready"}
                       </CardTitle>
                       <CardDescription className="text-sm leading-6 text-stone-600">
                         {roomState?.status === "drawing"
@@ -510,7 +532,9 @@ export default function GuessTheDrawRoom() {
                         min="2"
                         max="16"
                         value={brushSize}
-                        onChange={(event) => setBrushSize(Number(event.target.value))}
+                        onChange={(event) =>
+                          setBrushSize(Number(event.target.value))
+                        }
                       />
                       <span className="w-5 text-right text-xs text-stone-500">
                         {brushSize}
