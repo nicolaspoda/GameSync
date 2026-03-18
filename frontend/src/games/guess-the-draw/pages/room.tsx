@@ -447,11 +447,7 @@ export default function GuessTheDrawRoom() {
               <CardTitle className="text-3xl text-stone-900">
                 Room {activeRoomId}
               </CardTitle>
-              <CardDescription className="max-w-2xl text-sm leading-6 text-stone-600">
-                Simple waiting-room shell for now. The layout is ready for the
-                game loop: canvas and chat sit side by side, with the player
-                list directly under the canvas.
-              </CardDescription>
+              <CardDescription className="max-w-2xl text-sm leading-6 text-stone-600"></CardDescription>
             </div>
 
             <div className="flex flex-col items-start gap-2 sm:items-end">
@@ -469,7 +465,10 @@ export default function GuessTheDrawRoom() {
                 </p>
               ) : null}
               {isHost && roomState?.visibility === "private" ? (
-                <Button variant="outline" onClick={() => void handleCopyInviteLink()}>
+                <Button
+                  variant="outline"
+                  onClick={() => void handleCopyInviteLink()}
+                >
                   Copy invite link
                 </Button>
               ) : null}
@@ -492,8 +491,8 @@ export default function GuessTheDrawRoom() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.8fr)_minmax(320px,1fr)]">
-            <div className="grid gap-6">
+          <div className="grid gap-6">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.8fr)_minmax(320px,1fr)] lg:items-start">
               <Card className="border border-stone-200/80 bg-white/90 shadow-[0_16px_50px_rgba(60,42,17,0.08)]">
                 <CardHeader className="gap-4">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -680,134 +679,132 @@ export default function GuessTheDrawRoom() {
                 </CardContent>
               </Card>
 
-              <Card className="border border-stone-200/80 bg-white/90 shadow-[0_16px_50px_rgba(60,42,17,0.08)]">
+              <Card className="flex flex-col border border-stone-200/80 bg-white/90 shadow-[0_16px_50px_rgba(60,42,17,0.08)] lg:h-[650px]">
                 <CardHeader>
-                  <CardTitle className="text-xl text-stone-900">
-                    Players
-                  </CardTitle>
-                  <CardDescription>
-                    Everyone currently registered in the room.
-                  </CardDescription>
+                  <CardTitle className="text-xl text-stone-900">Chat</CardTitle>
                 </CardHeader>
-                <CardContent className="grid gap-3 sm:grid-cols-2">
-                  {players.length > 0 ? (
-                    players.map((player) => (
-                      <div
-                        key={player.id}
-                        className={cn(
-                          "rounded-2xl border p-4",
-                          player.id === selfPlayerId
-                            ? "border-amber-300 bg-amber-50/90 shadow-[0_10px_30px_rgba(245,158,11,0.12)]"
-                            : "border-stone-200 bg-stone-50/80",
-                        )}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-medium text-stone-900">
-                              {player.usernamename}
-                            </p>
-                            <p className="text-xs text-stone-500">
-                              Score: {player.score}
-                            </p>
-                          </div>
-                          <span
+                <CardContent className="flex min-h-0 flex-1">
+                  <div className="flex h-full w-full flex-col gap-3 overflow-hidden rounded-2xl border border-stone-200 bg-stone-50/70 p-4">
+                    <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-1 py-1">
+                      {messages.length > 0 ? (
+                        messages.map((message: Message, index) => (
+                          <div
+                            key={`${message.playerId}-${index}`}
                             className={cn(
-                              "inline-flex rounded-full px-2.5 py-1 text-xs font-medium",
-                              player.isConnected
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-stone-200 text-stone-600",
+                              "rounded-2xl px-3 py-2 shadow-sm ring-1 ring-black/5",
+                              message.guessed
+                                ? "bg-emerald-50 text-emerald-900 ring-emerald-200"
+                                : "bg-white",
                             )}
                           >
-                            {player.isConnected ? "Online" : "Offline"}
-                          </span>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-stone-500">
-                          {player.id === selfPlayerId ? (
-                            <span className="rounded-full bg-sky-100 px-2.5 py-1 font-medium text-sky-700">
-                              You
-                            </span>
-                          ) : null}
-                          {player.id === roomState?.drawerId ? (
-                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-medium text-emerald-700">
-                              Drawing
-                            </span>
-                          ) : null}
-                          {player.isHost ? (
-                            <span className="rounded-full bg-amber-100 px-2.5 py-1 font-medium text-amber-700">
-                              Host
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <EmptyState
-                      title="No players yet"
-                      description="Players will appear here as the room state comes in."
-                      className="sm:col-span-2"
-                    />
-                  )}
+                            <p className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
+                              {message.username}
+                            </p>
+                            <p className="mt-1 text-sm text-stone-800">
+                              {message.message}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <EmptyState
+                          title="Chat is quiet"
+                          description="Messages will appear here once players start talking."
+                          className="min-h-full flex-1"
+                        />
+                      )}
+                    </div>
+
+                    <div className="mt-auto flex gap-2 pt-2">
+                      <Input
+                        placeholder="Send a message to the room"
+                        value={chatInput}
+                        onChange={(event) => setChatInput(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
+                      />
+                      <Button
+                        onClick={handleSendMessage}
+                        disabled={!session || chatInput.trim().length === 0}
+                      >
+                        Send
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
             <Card className="border border-stone-200/80 bg-white/90 shadow-[0_16px_50px_rgba(60,42,17,0.08)]">
               <CardHeader>
-                <CardTitle className="text-xl text-stone-900">Chat</CardTitle>
+                <CardTitle className="text-xl text-stone-900">
+                  Players
+                </CardTitle>
                 <CardDescription>
-                  Waiting-room messages and future guesses will show here. Chat
-                  stays usable even before the turn starts.
+                  Everyone currently registered in the room.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex min-h-[calc(360px+12.25rem)] flex-col gap-3 rounded-2xl border border-stone-200 bg-stone-50/70 p-4">
-                  {messages.length > 0 ? (
-                    messages.map((message: Message, index) => (
-                      <div
-                        key={`${message.playerId}-${index}`}
-                        className={cn(
-                          "rounded-2xl px-3 py-2 shadow-sm ring-1 ring-black/5",
-                          message.guessed
-                            ? "bg-emerald-50 text-emerald-900 ring-emerald-200"
-                            : "bg-white",
-                        )}
-                      >
-                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
-                          {message.username}
-                        </p>
-                        <p className="mt-1 text-sm text-stone-800">
-                          {message.message}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <EmptyState
-                      title="Chat is quiet"
-                      description="Messages will appear here once players start talking."
-                      className="min-h-full flex-1"
-                    />
-                  )}
-
-                  <div className="mt-auto flex gap-2 pt-2">
-                    <Input
-                      placeholder="Send a message to the room"
-                      value={chatInput}
-                      onChange={(event) => setChatInput(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                    />
-                    <Button
-                      onClick={handleSendMessage}
-                      disabled={!session || chatInput.trim().length === 0}
+              <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {players.length > 0 ? (
+                  players.map((player) => (
+                    <div
+                      key={player.id}
+                      className={cn(
+                        "rounded-2xl border p-4",
+                        player.id === selfPlayerId
+                          ? "border-amber-300 bg-amber-50/90 shadow-[0_10px_30px_rgba(245,158,11,0.12)]"
+                          : "border-stone-200 bg-stone-50/80",
+                      )}
                     >
-                      Send
-                    </Button>
-                  </div>
-                </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-stone-900">
+                            {player.usernamename}
+                          </p>
+                          <p className="text-xs text-stone-500">
+                            Score: {player.score}
+                          </p>
+                        </div>
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full px-2.5 py-1 text-xs font-medium",
+                            player.isConnected
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-stone-200 text-stone-600",
+                          )}
+                        >
+                          {player.isConnected ? "Online" : "Offline"}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-stone-500">
+                        {player.id === selfPlayerId ? (
+                          <span className="rounded-full bg-sky-100 px-2.5 py-1 font-medium text-sky-700">
+                            You
+                          </span>
+                        ) : null}
+                        {player.id === roomState?.drawerId ? (
+                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-medium text-emerald-700">
+                            Drawing
+                          </span>
+                        ) : null}
+                        {player.isHost ? (
+                          <span className="rounded-full bg-amber-100 px-2.5 py-1 font-medium text-amber-700">
+                            Host
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <EmptyState
+                    title="No players yet"
+                    description="Players will appear here as the room state comes in."
+                    className="sm:col-span-2 lg:col-span-3 xl:col-span-4"
+                  />
+                )}
               </CardContent>
             </Card>
           </div>
