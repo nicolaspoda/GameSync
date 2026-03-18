@@ -249,6 +249,10 @@ export default function GuessTheDrawRoom() {
   const isSelfDrawing =
     Boolean(selfPlayerId) &&
     (activeTurn?.drawerId ?? roomState?.drawerId ?? null) === selfPlayerId;
+  const hasSelfGuessedCorrectly =
+    selfPlayerId !== null &&
+    !isSelfDrawing &&
+    roomState?.round.pointGains[selfPlayerId] !== undefined;
   const activeStatus = roomState?.status ?? "connecting";
 
   const activeTimerTarget =
@@ -265,7 +269,7 @@ export default function GuessTheDrawRoom() {
   const roundNumber = roomState?.round.number ?? 1;
   const totalRounds = roomState?.maxRounds ?? 1;
   const displayedWord =
-    isSelfDrawing && activeTurn?.word?.trim()
+    (isSelfDrawing || hasSelfGuessedCorrectly) && activeTurn?.word?.trim()
       ? activeTurn.word
       : roomState?.round.wordMasked?.trim() || "No word yet";
   const roundPointGains = players
@@ -500,7 +504,9 @@ export default function GuessTheDrawRoom() {
                       </div>
                       <div className="flex items-center justify-between gap-4 text-sm">
                         <span className="text-stone-500">
-                          {isSelfDrawing ? "Word" : "Hint"}
+                          {isSelfDrawing || hasSelfGuessedCorrectly
+                            ? "Word"
+                            : "Hint"}
                         </span>
                         <span className="font-mono text-base tracking-[0.24em] text-stone-900">
                           {displayedWord}
@@ -571,7 +577,7 @@ export default function GuessTheDrawRoom() {
                               Cleanup
                             </p>
                             <h3 className="mt-2 text-2xl font-semibold">
-                              Round point gains
+                              Turn point gains
                             </h3>
                             <div className="mt-4 grid gap-3">
                               {roundPointGains.map((entry) => (
