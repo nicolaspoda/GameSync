@@ -244,6 +244,7 @@ export default function GuessTheDrawRoom() {
     players.find((player) => player.id === selfPlayerId) ?? null;
   const isHost = Boolean(selfPlayer?.isHost);
   const isWaiting = roomState?.status === "waiting";
+  const canStartGame = players.length >= 2;
   const currentDrawer =
     players.find((player) => player.id === roomState?.drawerId) ?? null;
   const isSelfDrawing =
@@ -473,7 +474,9 @@ export default function GuessTheDrawRoom() {
                 </Button>
               ) : null}
               {isHost && isWaiting ? (
-                <Button onClick={handleStartGame}>Start game</Button>
+                <Button onClick={handleStartGame} disabled={!canStartGame}>
+                  Start game
+                </Button>
               ) : null}
             </div>
           </CardHeader>

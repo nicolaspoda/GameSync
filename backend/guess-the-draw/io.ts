@@ -662,7 +662,10 @@ export function createGuessTheDrawIo(
       getPublicRoomState(sessionStore.getRoomState(roomId)),
     );
 
-    if (remainingSessions.length === 1) {
+    if (
+      remainingSessions.length === 1 &&
+      previousRoomState?.status !== "waiting"
+    ) {
       finishGame(roomId);
       return;
     }
@@ -744,6 +747,14 @@ export function createGuessTheDrawIo(
       const currentRoomState = sessionStore.getRoomState(session.roomId);
 
       if (!currentRoomState) {
+        return;
+      }
+
+      if (currentRoomState.players.length < 2) {
+        socket.emit(guessTheDrawServerEvents.error, {
+          code: "not-enough-players",
+          message: "At least 2 players are required to start a game.",
+        });
         return;
       }
 
