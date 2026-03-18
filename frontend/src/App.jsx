@@ -5,15 +5,15 @@ import CreatePrivateRoom from "./games/guess-the-draw/pages/create-private-room"
 import JoinPrivateRoom from "./games/guess-the-draw/pages/join-private-room";
 import GuessTheDrawRoom from "./games/guess-the-draw/pages/room";
 import { Toaster } from "@/components/ui/sonner";
+import HomePage from "./pages/home";
+import GamePlayerPage from "./pages/game-player";
 
 function App() {
   return (
     <>
-      {/* <nav style={{ display: "flex", gap: "1rem" }}>
-        <Link to="/guess-the-draw">GuessTheDraw</Link>
-        <Link to="/about">About</Link>
-      </nav> */}
       <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/play/:gameId" element={<GamePlayerPage />} />
         <Route path="/guess-the-draw" element={<JoinGuessTheDraw />} />
         <Route path="/guess-the-draw/create" element={<CreatePrivateRoom />} />
         <Route
