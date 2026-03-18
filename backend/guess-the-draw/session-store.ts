@@ -5,6 +5,7 @@ import type {
   GuessTheDrawSessionStore,
   GuessTheDrawSessionValidationInput,
   Message,
+  PlayerId,
   RoomId,
   RoomState,
   RoomTimers,
@@ -166,6 +167,26 @@ export function createGuessTheDrawSessionStore(): GuessTheDrawSessionStore {
     return true;
   }
 
+  function setHost(roomId: RoomId, playerId: PlayerId | null): RoomState | null {
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      return null;
+    }
+
+    for (const [currentPlayerId, player] of room.players.entries()) {
+      room.players.set(currentPlayerId, {
+        ...player,
+        metadata: {
+          ...player.metadata,
+          isHost: playerId !== null && currentPlayerId === playerId,
+        },
+      });
+    }
+
+    return syncRoomPlayers(roomId);
+  }
+
   function getRoomSessions(roomId: RoomId) {
     const room = rooms.get(roomId);
     return room ? Array.from(room.players.values()) : [];
@@ -270,6 +291,7 @@ export function createGuessTheDrawSessionStore(): GuessTheDrawSessionStore {
     getRoomState,
     registerSession,
     revokeSession,
+    setHost,
     setPlayerScore,
     setPointGain,
     setRoomState,

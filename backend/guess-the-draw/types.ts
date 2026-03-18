@@ -167,6 +167,7 @@ export type GuessTheDrawSessionStore = {
   getRoomState: (roomId: RoomId) => RoomState | null;
   registerSession: (session: GuessTheDrawSession) => RoomState | null;
   revokeSession: (input: { roomId: RoomId; playerId: PlayerId }) => boolean;
+  setHost: (roomId: RoomId, playerId: PlayerId | null) => RoomState | null;
   setPlayerScore: (
     roomId: RoomId,
     playerId: PlayerId,
