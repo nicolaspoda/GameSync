@@ -263,6 +263,7 @@ export default function GuessTheDrawRoom() {
         players.find((player) => player.id === playerId)?.usernamename ?? playerId,
     }))
     .sort((left, right) => right.points - left.points);
+  const finalStandings = [...players].sort((left, right) => right.score - left.score);
 
   function handleSendMessage() {
     const trimmedMessage = chatInput.trim();
@@ -570,6 +571,39 @@ export default function GuessTheDrawRoom() {
                                   No points were earned this turn.
                                 </div>
                               )}
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {roomState?.status === "finished" ? (
+                        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-stone-950/45 p-4 backdrop-blur-sm">
+                          <div className="w-full max-w-sm rounded-3xl border border-white/20 bg-white/88 p-5 text-stone-900 shadow-2xl">
+                            <p className="text-xs font-medium uppercase tracking-[0.24em] text-stone-500">
+                              Game over
+                            </p>
+                            <h3 className="mt-2 text-2xl font-semibold">
+                              Final results
+                            </h3>
+                            <div className="mt-4 grid gap-3">
+                              {finalStandings.map((player, index) => (
+                                <div
+                                  key={player.id}
+                                  className="flex items-center justify-between rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-black/5"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span className="inline-flex size-7 items-center justify-center rounded-full bg-stone-900 text-xs font-semibold text-white">
+                                      {index + 1}
+                                    </span>
+                                    <span className="text-sm font-medium">
+                                      {player.usernamename}
+                                    </span>
+                                  </div>
+                                  <span className="text-sm font-semibold text-stone-900">
+                                    {player.score} pts
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         </div>
