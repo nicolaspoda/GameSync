@@ -420,6 +420,23 @@ export default function GuessTheDrawRoom() {
     }
   }
 
+  async function handleCopyInviteLink() {
+    if (typeof window === "undefined" || !activeRoomId) {
+      toast.error("Unable to build the invite link.");
+      return;
+    }
+
+    const inviteLink = `${window.location.origin}/guess-the-draw/private/${activeRoomId}/join`;
+
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      toast.success("Invite link copied.");
+    } catch (error) {
+      console.error("Unable to copy invite link", error);
+      toast.error("Unable to copy the invite link.");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,205,120,0.18),_transparent_28%),linear-gradient(180deg,_#fcf8f1_0%,_#f4eee5_100%)] px-6 py-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -449,6 +466,11 @@ export default function GuessTheDrawRoom() {
                   {roomState?.status === "drawing" ? "Turn ends" : "Next turn"}{" "}
                   in {timerSeconds}s
                 </p>
+              ) : null}
+              {isHost ? (
+                <Button variant="outline" onClick={() => void handleCopyInviteLink()}>
+                  Copy invite link
+                </Button>
               ) : null}
               {isHost && isWaiting ? (
                 <Button onClick={handleStartGame}>Start game</Button>

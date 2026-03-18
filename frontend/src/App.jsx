@@ -2,6 +2,7 @@ import "./App.css";
 import JoinGuessTheDraw from "./games/guess-the-draw/pages/join";
 import { Routes, Route } from "react-router-dom";
 import CreatePrivateRoom from "./games/guess-the-draw/pages/create-private-room";
+import JoinPrivateRoom from "./games/guess-the-draw/pages/join-private-room";
 import GuessTheDrawRoom from "./games/guess-the-draw/pages/room";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -15,6 +16,10 @@ function App() {
       <Routes>
         <Route path="/guess-the-draw" element={<JoinGuessTheDraw />} />
         <Route path="/guess-the-draw/create" element={<CreatePrivateRoom />} />
+        <Route
+          path="/guess-the-draw/private/:roomId/join"
+          element={<JoinPrivateRoom />}
+        />
         <Route path="/guess-the-draw/room/:roomId" element={<GuessTheDrawRoom />} />
       </Routes>
       <Toaster />
