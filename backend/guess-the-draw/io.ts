@@ -7,6 +7,7 @@ import { createGuessTheDrawSessionStore } from "./session-store";
 import { createGuessTheDrawSocketAuth } from "./socket-auth";
 import {
   emitToRoom,
+  emitToPlayer,
   getGuessTheDrawPlayerChannel,
   getGuessTheDrawRoomChannel,
   getSocketSession,
@@ -178,6 +179,91 @@ function getPublicRoomState(roomState: RoomState | null): RoomState | null {
   };
 }
 
+function hasPlayerGuessedThisTurn(
+  roomState: RoomState,
+  playerId: PlayerId,
+): boolean {
+  return (
+    playerId !== roomState.round.drawerId &&
+    roomState.round.pointGains[playerId] !== undefined
+  );
+}
+
+function hasViewerFinishedGuessing(
+  roomState: RoomState,
+  viewerPlayerId: PlayerId,
+): boolean {
+  return (
+    viewerPlayerId === roomState.round.drawerId ||
+    hasPlayerGuessedThisTurn(roomState, viewerPlayerId)
+  );
+}
+
+function canViewerSeeMessage(
+  roomState: RoomState,
+  viewerPlayerId: PlayerId,
+  message: Message,
+): boolean {
+  if (roomState.status !== "drawing") {
+    return true;
+  }
+
+  if (message.playerId === roomState.round.drawerId) {
+    return hasViewerFinishedGuessing(roomState, viewerPlayerId);
+  }
+
+  const senderHasGuessed = hasPlayerGuessedThisTurn(roomState, message.playerId);
+
+  if (!senderHasGuessed) {
+    return true;
+  }
+
+  return viewerPlayerId === message.playerId || hasViewerFinishedGuessing(roomState, viewerPlayerId);
+}
+
+function getVisibleRoomState(
+  roomState: RoomState | null,
+  viewerPlayerId: PlayerId,
+): RoomState | null {
+  const publicRoomState = getPublicRoomState(roomState);
+
+  if (!publicRoomState) {
+    return null;
+  }
+
+  return {
+    ...publicRoomState,
+    messages: publicRoomState.messages.flatMap((message) => {
+      const visibleMessage = getVisibleMessage(
+        publicRoomState,
+        viewerPlayerId,
+        message,
+      );
+
+      return visibleMessage ? [visibleMessage] : [];
+    }),
+  };
+}
+
+function getVisibleMessage(
+  roomState: RoomState,
+  viewerPlayerId: PlayerId,
+  message: Message,
+): Message | null {
+  if (canViewerSeeMessage(roomState, viewerPlayerId, message)) {
+    return message;
+  }
+
+  if (message.guessed) {
+    return {
+      ...message,
+      message: `${message.username} has guessed`,
+    };
+  }
+
+  return null;
+}
+
 export function createGuessTheDrawIo(
   httpServer: HttpServer,
   options: GuessTheDrawIoOptions = {},
@@ -214,6 +300,53 @@ export function createGuessTheDrawIo(
 
     clearRoomLifecycleTimers(getRoomLifecycleTimers(roomId));
     roomLifecycleTimers.delete(roomId);
+  }
+
+  function emitRoomStateToActivePlayers(
+    roomId: string,
+    event:
+      | typeof guessTheDrawServerEvents.roomState
+      | typeof guessTheDrawServerEvents.playerJoined
+      | typeof guessTheDrawServerEvents.playerLeft
+      | typeof guessTheDrawServerEvents.gameStarted,
+  ) {
+    const roomState = sessionStore.getRoomState(roomId);
+
+    for (const playerSession of sessionStore.getRoomSessions(roomId)) {
+      emitToPlayer(
+        io,
+        playerSession.playerId,
+        event,
+        getVisibleRoomState(roomState, playerSession.playerId),
+      );
+    }
+  }
+
+  function emitChatMessageToActivePlayers(roomId: string, message: Message) {
+    const roomState = sessionStore.getRoomState(roomId);
+
+    if (!roomState) {
+      return;
+    }
+
+    for (const playerSession of sessionStore.getRoomSessions(roomId)) {
+      const visibleMessage = getVisibleMessage(
+        roomState,
+        playerSession.playerId,
+        message,
+      );
+
+      if (!visibleMessage) {
+        continue;
+      }
+
+      emitToPlayer(
+        io,
+        playerSession.playerId,
+        guessTheDrawServerEvents.chatMessage,
+        visibleMessage,
+      );
+    }
   }
 
   function getNextDrawerId(roomId: string, currentDrawerId: string | null) {
@@ -279,6 +412,7 @@ export function createGuessTheDrawIo(
     sessionStore.setRoomState(roomId, {
       status: "drawing",
       drawerId,
+      messages: [],
       strokes: [],
       timers: createTurnTimers(),
     });
@@ -291,12 +425,7 @@ export function createGuessTheDrawIo(
       getPublicRoomState(sessionStore.getRoomState(roomId)),
     );
     emitToRoom(io, roomId, guessTheDrawServerEvents.turnStarted, round);
-    emitToRoom(
-      io,
-      roomId,
-      guessTheDrawServerEvents.roomState,
-      getPublicRoomState(sessionStore.getRoomState(roomId)),
-    );
+    emitRoomStateToActivePlayers(roomId, guessTheDrawServerEvents.roomState);
 
     roomTimers.hintTimeout = setTimeout(() => {
       triggerHint(roomId);
@@ -327,12 +456,7 @@ export function createGuessTheDrawIo(
           nextHintAt: null,
         },
       });
-      emitToRoom(
-        io,
-        roomId,
-        guessTheDrawServerEvents.roomState,
-        getPublicRoomState(sessionStore.getRoomState(roomId)),
-      );
+      emitRoomStateToActivePlayers(roomId, guessTheDrawServerEvents.roomState);
       roomTimers.hintTimeout = null;
       return;
     }
@@ -359,12 +483,7 @@ export function createGuessTheDrawIo(
       },
     });
 
-    emitToRoom(
-      io,
-      roomId,
-      guessTheDrawServerEvents.roomState,
-      getPublicRoomState(sessionStore.getRoomState(roomId)),
-    );
+    emitRoomStateToActivePlayers(roomId, guessTheDrawServerEvents.roomState);
 
     if (hasTimeForAnotherHint && hasMoreLettersToReveal) {
       roomTimers.hintTimeout = setTimeout(() => {
@@ -422,12 +541,7 @@ export function createGuessTheDrawIo(
       guessTheDrawServerEvents.gameEnded,
       finishedRoomState?.players ?? [],
     );
-    emitToRoom(
-      io,
-      roomId,
-      guessTheDrawServerEvents.roomState,
-      getPublicRoomState(finishedRoomState),
-    );
+    emitRoomStateToActivePlayers(roomId, guessTheDrawServerEvents.roomState);
   }
 
   function endTurn(roomId: string) {
@@ -459,12 +573,7 @@ export function createGuessTheDrawIo(
       guessTheDrawServerEvents.turnEnded,
       currentRoomState.round,
     );
-    emitToRoom(
-      io,
-      roomId,
-      guessTheDrawServerEvents.roomState,
-      getPublicRoomState(sessionStore.getRoomState(roomId)),
-    );
+    emitRoomStateToActivePlayers(roomId, guessTheDrawServerEvents.roomState);
 
     roomTimers.cleanupTimeout = setTimeout(() => {
       const nextRoomState = sessionStore.getRoomState(roomId);
@@ -534,12 +643,7 @@ export function createGuessTheDrawIo(
       return;
     }
 
-    emitToRoom(
-      io,
-      roomId,
-      guessTheDrawServerEvents.roomState,
-      getPublicRoomState(sessionStore.getRoomState(roomId)),
-    );
+    emitRoomStateToActivePlayers(roomId, guessTheDrawServerEvents.roomState);
   }
 
   io.use(createGuessTheDrawSocketAuth(sessionStore));
@@ -566,21 +670,17 @@ export function createGuessTheDrawIo(
 
     socket.emit(guessTheDrawServerEvents.connected);
     socket.emit(guessTheDrawServerEvents.roomJoined, {
-      room: getPublicRoomState(roomState),
+      room: getVisibleRoomState(roomState, session.playerId),
       selfPlayerId: session.playerId,
     });
 
-    emitToRoom(
-      io,
+    emitRoomStateToActivePlayers(
       session.roomId,
       guessTheDrawServerEvents.roomState,
-      getPublicRoomState(roomState),
     );
-    emitToRoom(
-      io,
+    emitRoomStateToActivePlayers(
       session.roomId,
       guessTheDrawServerEvents.playerJoined,
-      getPublicRoomState(roomState),
     );
 
     socket.on(guessTheDrawClientEvents.leaveRoom, () => {
@@ -601,11 +701,9 @@ export function createGuessTheDrawIo(
       resetGame(session.roomId);
 
       if (currentRoomState.status === "finished") {
-        emitToRoom(
-          io,
+        emitRoomStateToActivePlayers(
           session.roomId,
           guessTheDrawServerEvents.roomState,
-          getPublicRoomState(sessionStore.getRoomState(session.roomId)),
         );
         return;
       }
@@ -726,17 +824,10 @@ export function createGuessTheDrawIo(
         };
 
         sessionStore.addMessage(session.roomId, message);
-        emitToRoom(
-          io,
-          session.roomId,
-          guessTheDrawServerEvents.chatMessage,
-          message,
-        );
-        emitToRoom(
-          io,
+        emitChatMessageToActivePlayers(session.roomId, message);
+        emitRoomStateToActivePlayers(
           session.roomId,
           guessTheDrawServerEvents.roomState,
-          getPublicRoomState(sessionStore.getRoomState(session.roomId)),
         );
 
         const updatedRoomState = sessionStore.getRoomState(session.roomId);
