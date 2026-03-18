@@ -2,32 +2,82 @@ const {
   createInitialGameState,
   checkWinner,
   rooms,
+  scheduleRoomDeletion,
+  cancelRoomDeletion,
 } = require('../services/puissance4Game')
 
 function registerPuissance4Sockets(io) {
   io.on('connection', (socket) => {
-    socket.on('joinPuissance4Room', ({ roomCode, playerId }) => {
+    const syncRoomState = (roomCode) => {
       const room = rooms.get(roomCode)
       if (!room) return
-
-      if (playerId) {
-        const player = room.players.find((candidate) => candidate.id === playerId)
-        if (player) {
-          socket.data.playerId = playerId
-          socket.data.roomCode = roomCode
-        }
-      }
-
-      socket.join(roomCode)
       io.to(roomCode).emit('puissance4GameStateUpdate', {
         ...room.gameState,
         players: room.players,
       })
+    }
+
+    const removePlayerFromRoom = ({ roomCode, playerId }) => {
+      const room = rooms.get(roomCode)
+      if (!room || !playerId) return
+
+      const nextPlayers = room.players.filter((candidate) => candidate.id !== playerId)
+      if (nextPlayers.length === room.players.length) return
+
+      room.players = nextPlayers
+
+      if (room.players.length === 0) {
+        scheduleRoomDeletion(roomCode)
+        return
+      }
+
+      // Si quelqu'un quitte, on repart sur un état propre.
+      room.gameState = createInitialGameState()
+      syncRoomState(roomCode)
+    }
+
+    socket.on('joinPuissance4Room', ({ roomCode, playerId }) => {
+      const normalizedRoomCode = String(roomCode || '').trim().toUpperCase()
+      if (!normalizedRoomCode) return
+
+      const room = rooms.get(normalizedRoomCode)
+      if (!room) return
+      cancelRoomDeletion(normalizedRoomCode)
+
+      socket.data.roomCode = normalizedRoomCode
+      if (playerId) socket.data.playerId = playerId
+
+      if (playerId) {
+        const player = room.players.find((candidate) => candidate.id === playerId)
+        if (player) {
+          // ok
+        } else {
+          // Si l'id n'est pas connu côté serveur, on évite de bloquer le leave:
+          // le client a probablement déjà récupéré un nouvel id via l'API REST.
+        }
+      }
+
+      socket.join(normalizedRoomCode)
+      syncRoomState(normalizedRoomCode)
+    })
+
+    socket.on('leavePuissance4Room', ({ roomCode, playerId }) => {
+      const effectiveRoomCode = (roomCode || socket.data.roomCode || '')
+        .toString()
+        .trim()
+        .toUpperCase()
+      const effectivePlayerId = playerId || socket.data.playerId
+      if (!effectiveRoomCode) return
+
+      socket.leave(effectiveRoomCode)
+      removePlayerFromRoom({ roomCode: effectiveRoomCode, playerId: effectivePlayerId })
     })
 
     socket.on('puissance4OnClickColumn', ({ roomCode, columnIndex }) => {
-      const room = rooms.get(roomCode)
+      const normalizedRoomCode = String(roomCode || '').trim().toUpperCase()
+      const room = rooms.get(normalizedRoomCode)
       if (!room || room.gameState.winner) return
+      if (room.players.length < 2) return
 
       const { playerId } = socket.data
       if (!playerId) return
@@ -64,21 +114,23 @@ function registerPuissance4Sockets(io) {
       }
 
       room.gameState = nextState
-      io.to(roomCode).emit('puissance4GameStateUpdate', {
-        ...nextState,
-        players: room.players,
-      })
+      syncRoomState(normalizedRoomCode)
     })
 
     socket.on('puissance4Restart', ({ roomCode }) => {
-      const room = rooms.get(roomCode)
+      const normalizedRoomCode = String(roomCode || '').trim().toUpperCase()
+      const room = rooms.get(normalizedRoomCode)
       if (!room) return
 
       room.gameState = createInitialGameState()
-      io.to(roomCode).emit('puissance4GameStateUpdate', {
-        ...room.gameState,
-        players: room.players,
-      })
+      syncRoomState(normalizedRoomCode)
+    })
+
+    socket.on('disconnect', () => {
+      const roomCode = socket.data.roomCode
+      const playerId = socket.data.playerId
+      if (!roomCode || !playerId) return
+      removePlayerFromRoom({ roomCode, playerId })
     })
   })
 }

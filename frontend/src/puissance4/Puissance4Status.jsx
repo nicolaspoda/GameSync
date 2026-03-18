@@ -2,7 +2,9 @@ function Puissance4Status({ gameState }) {
   const { currentPlayer, winner, players = [] } = gameState
 
   let label = 'En attente du prochain coup'
-  if (winner === 'DRAW') {
+  if (players.length < 2) {
+    label = "En attente d'un deuxième joueur"
+  } else if (winner === 'DRAW') {
     label = 'Match nul'
   } else if (winner) {
     label = `Victoire de ${winner === 'RED' ? 'Rouge' : 'Jaune'}`

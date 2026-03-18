@@ -1,4 +1,4 @@
-function Puissance4Board({ board, onClickColumn }) {
+function Puissance4Board({ board, onClickColumn, disabled = false }) {
   return (
     <div className="p4-board">
       {board[0].map((_, columnIndex) => (
@@ -6,6 +6,7 @@ function Puissance4Board({ board, onClickColumn }) {
           key={columnIndex}
           type="button"
           className="p4-board-column"
+          disabled={disabled}
           onClick={() => onClickColumn(columnIndex)}
         >
           {board

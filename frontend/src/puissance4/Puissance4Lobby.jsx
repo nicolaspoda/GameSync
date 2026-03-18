@@ -29,7 +29,8 @@ function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom, onBack }) {
         body: JSON.stringify({ username: trimmedUsername }),
       })
       if (!response.ok) {
-        throw new Error('Impossible de rejoindre une partie.')
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error || 'Impossible de rejoindre une partie.')
       }
       const data = await response.json()
       onJoinRoom({
@@ -46,7 +47,7 @@ function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom, onBack }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    const trimmedCode = gameCode.trim()
+    const trimmedCode = gameCode.trim().toUpperCase()
     const trimmedUsername = username.trim()
 
     if (!trimmedCode || !trimmedUsername) {
@@ -73,7 +74,8 @@ function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom, onBack }) {
       )
 
       if (!response.ok) {
-        throw new Error("Impossible de rejoindre cette partie.")
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error || "Impossible de rejoindre cette partie.")
       }
 
       const data = await response.json()

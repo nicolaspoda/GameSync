@@ -53,6 +53,33 @@ function checkWinner(board) {
 }
 
 const rooms = new Map()
+const roomDeletionTimers = new Map()
+const ROOM_TTL_MS = 5 * 60 * 1000
+
+function scheduleRoomDeletion(roomCode) {
+  const normalized = String(roomCode || '').trim().toUpperCase()
+  if (!normalized) return
+  if (roomDeletionTimers.has(normalized)) return
+
+  const timeoutId = setTimeout(() => {
+    roomDeletionTimers.delete(normalized)
+    const room = rooms.get(normalized)
+    if (!room) return
+    if (room.players && room.players.length === 0) {
+      rooms.delete(normalized)
+    }
+  }, ROOM_TTL_MS)
+
+  roomDeletionTimers.set(normalized, timeoutId)
+}
+
+function cancelRoomDeletion(roomCode) {
+  const normalized = String(roomCode || '').trim().toUpperCase()
+  const timeoutId = roomDeletionTimers.get(normalized)
+  if (!timeoutId) return
+  clearTimeout(timeoutId)
+  roomDeletionTimers.delete(normalized)
+}
 
 function generateRoomCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -67,6 +94,7 @@ function generateRoomCode() {
 function getOrCreateWaitingRoom() {
   for (const room of rooms.values()) {
     if (!room.isPrivate && room.players.length === 1) {
+      cancelRoomDeletion(room.code)
       return room
     }
   }
@@ -89,5 +117,7 @@ module.exports = {
   rooms,
   generateRoomCode,
   getOrCreateWaitingRoom,
+  scheduleRoomDeletion,
+  cancelRoomDeletion,
 }
 

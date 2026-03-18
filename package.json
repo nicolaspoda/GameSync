@@ -1,0 +1,13 @@
+{
+  "name": "gamesync-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n back,front -c blue,magenta \"PORT=3002 npm --prefix backend run dev\" \"VITE_BACKEND_URL=http://localhost:3002 npm --prefix frontend run dev\"",
+    "dev:back": "PORT=3002 npm --prefix backend run dev",
+    "dev:front": "VITE_BACKEND_URL=http://localhost:3002 npm --prefix frontend run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
+

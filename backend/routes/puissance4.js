@@ -4,6 +4,7 @@ const {
   rooms,
   generateRoomCode,
   getOrCreateWaitingRoom,
+  cancelRoomDeletion,
 } = require('../services/puissance4Game')
 
 const router = express.Router()
@@ -11,11 +12,12 @@ const router = express.Router()
 router.post('/join-random-room', (request, response) => {
   const { username } = request.body
   if (!username) {
-    response.status(400).json({ error: 'username is required' })
+    response.status(400).json({ error: 'Pseudo requis.' })
     return
   }
 
   const room = getOrCreateWaitingRoom()
+  cancelRoomDeletion(room.code)
   const playerId = `p${Date.now()}${Math.random().toString(16).slice(2)}`
   room.players.push({ id: playerId, name: username })
 
@@ -35,7 +37,7 @@ router.post('/join-random-room', (request, response) => {
 router.post('/create-private-room', (request, response) => {
   const { username, roomName } = request.body
   if (!username || !roomName) {
-    response.status(400).json({ error: 'username and roomName are required' })
+    response.status(400).json({ error: 'Pseudo et nom de salle requis.' })
     return
   }
 
@@ -47,6 +49,7 @@ router.post('/create-private-room', (request, response) => {
     players: [],
     gameState: createInitialGameState(),
   }
+  cancelRoomDeletion(code)
 
   const playerId = `p${Date.now()}${Math.random().toString(16).slice(2)}`
   room.players.push({ id: playerId, name: username, color: 'RED' })
@@ -64,18 +67,23 @@ router.post('/join-room-by-code', (request, response) => {
   if (!username || !roomCode) {
     response
       .status(400)
-      .json({ error: 'username and roomCode are required' })
+      .json({ error: 'Pseudo et code de partie requis.' })
     return
   }
 
-  const room = rooms.get(roomCode)
+  const normalizedRoomCode = String(roomCode).trim().toUpperCase()
+  const room = rooms.get(normalizedRoomCode)
   if (!room) {
-    response.status(404).json({ error: 'room not found' })
+    response.status(404).json({
+      error:
+        "Salle introuvable. Vérifie le code (6 caractères) ou recrée une salle (le serveur a peut-être redémarré).",
+    })
     return
   }
+  cancelRoomDeletion(normalizedRoomCode)
 
   if (room.players.length >= 2) {
-    response.status(400).json({ error: 'room is already full' })
+    response.status(400).json({ error: 'Cette salle est déjà complète.' })
     return
   }
 

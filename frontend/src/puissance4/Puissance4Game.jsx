@@ -31,10 +31,10 @@ function Puissance4Game({ room, onLeave }) {
     socket.on('puissance4GameStateUpdate', handleGameStateUpdate)
 
     return () => {
-      socket.emit('leavePuissance4Room', { roomCode: room.code })
+      socket.emit('leavePuissance4Room', { roomCode: room.code, playerId: room.playerId })
       socket.off('puissance4GameStateUpdate', handleGameStateUpdate)
     }
-  }, [room.code])
+  }, [room.code, room.playerId])
 
   const handleClickColumn = (columnIndex) => {
     socket.emit('puissance4OnClickColumn', {
@@ -47,6 +47,11 @@ function Puissance4Game({ room, onLeave }) {
     socket.emit('puissance4Restart', { roomCode: room.code })
     setGameState(INITIAL_GAME_STATE)
   }
+
+  const players = gameState.players ?? []
+  const me = players.find((player) => player.id === room.playerId)
+  const isMyTurn = me && me.color && me.color === gameState.currentPlayer
+  const canPlay = players.length >= 2 && !gameState.winner && isMyTurn
 
   return (
     <section className="p4-screen">
@@ -64,7 +69,11 @@ function Puissance4Game({ room, onLeave }) {
 
       <div className="p4-game-layout">
         <div className="p4-panel">
-          <Puissance4Board board={gameState.board} onClickColumn={handleClickColumn} />
+          <Puissance4Board
+            board={gameState.board}
+            onClickColumn={handleClickColumn}
+            disabled={!canPlay}
+          />
         </div>
 
         <div className="p4-sidebar">
