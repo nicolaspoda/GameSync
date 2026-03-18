@@ -16,7 +16,7 @@ export default function HomePage() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <section className="rounded-[2rem] border border-black/5 bg-white/75 p-8 shadow-[0_24px_80px_rgba(60,42,17,0.10)] backdrop-blur">
           <p className="mb-4 text-sm font-medium uppercase tracking-[0.3em] text-amber-700/80">
-            Game Center
+            GameSync
           </p>
           <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl">
             Pick a game and launch it inside a dedicated player view.
