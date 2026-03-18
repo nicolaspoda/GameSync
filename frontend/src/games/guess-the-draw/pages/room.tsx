@@ -468,7 +468,7 @@ export default function GuessTheDrawRoom() {
                   in {timerSeconds}s
                 </p>
               ) : null}
-              {isHost ? (
+              {isHost && roomState?.visibility === "private" ? (
                 <Button variant="outline" onClick={() => void handleCopyInviteLink()}>
                   Copy invite link
                 </Button>

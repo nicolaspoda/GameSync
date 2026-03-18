@@ -34,6 +34,7 @@ function createDefaultTimers(): RoomTimers {
 function createDefaultRoomState(roomId: RoomId): RoomState {
   return {
     id: roomId,
+    visibility: "public",
     status: "waiting",
     maxRounds: 3,
     maxPlayers: 8,
@@ -101,6 +102,10 @@ export function createGuessTheDrawSessionStore(): GuessTheDrawSessionStore {
 
     if (session.metadata?.maxPlayers) {
       room.state.maxPlayers = session.metadata.maxPlayers;
+    }
+
+    if (session.metadata?.visibility) {
+      room.state.visibility = session.metadata.visibility;
     }
 
     return syncRoomPlayers(session.roomId);

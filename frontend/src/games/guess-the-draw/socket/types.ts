@@ -49,6 +49,7 @@ export type Stroke = {
 
 export type RoomState = {
   id: RoomId;
+  visibility: RoomVisibility;
   status: GamePhase;
   maxRounds: number;
   maxPlayers: number;
