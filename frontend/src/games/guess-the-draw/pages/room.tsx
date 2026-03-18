@@ -427,7 +427,8 @@ export default function GuessTheDrawRoom() {
       return;
     }
 
-    const inviteLink = `${window.location.origin}/guess-the-draw/private/${activeRoomId}/join`;
+    const nestedJoinPath = `/guess-the-draw/private/${activeRoomId}/join`;
+    const inviteLink = `${window.location.origin}/play/guess-the-draw?path=${encodeURIComponent(nestedJoinPath)}`;
 
     try {
       await navigator.clipboard.writeText(inviteLink);

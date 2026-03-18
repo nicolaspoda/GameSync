@@ -10,13 +10,19 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { gameCatalog, getGameById } from "@/games/catalog";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 
 export default function GamePlayerPage() {
   const { gameId = "" } = useParams();
+  const [searchParams] = useSearchParams();
   const frameRef = useRef<HTMLDivElement | null>(null);
   const game = getGameById(gameId);
   const recommendedGames = gameCatalog.filter((entry) => entry.id !== gameId);
+  const requestedPath = searchParams.get("path");
+  const frameSource =
+    requestedPath && requestedPath.startsWith("/")
+      ? requestedPath
+      : game?.launchPath ?? null;
 
   async function handleFullscreen() {
     if (!frameRef.current) {
@@ -60,7 +66,7 @@ export default function GamePlayerPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-2">
             <p className="text-sm font-medium uppercase tracking-[0.28em] text-amber-700/80">
-              Player
+              GameSync Player
             </p>
             <h1 className="text-3xl font-semibold text-stone-900">
               {game.title}
@@ -83,9 +89,9 @@ export default function GamePlayerPage() {
               ref={frameRef}
               className="game-player-frame overflow-hidden rounded-[1.75rem] border border-stone-200 bg-stone-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
             >
-              {game.launchPath ? (
+              {frameSource ? (
                 <iframe
-                  src={game.launchPath}
+                  src={frameSource}
                   title={game.title}
                   className="block h-[78vh] min-h-[720px] w-full bg-white"
                 />
@@ -114,7 +120,7 @@ export default function GamePlayerPage() {
                 </p>
               </div>
 
-              {game.launchPath ? (
+              {frameSource ? (
                 <Button onClick={handleFullscreen}>Go fullscreen</Button>
               ) : null}
             </div>
