@@ -1,6 +1,6 @@
 {
-  "watch": ["index.js", "routes", "services", "sockets"],
-  "ext": "js,json",
+  "watch": ["puissance4", "guess-the-draw"],
+  "ext": "ts,json",
   "ignore": ["node_modules", ".git", "package-lock.json"],
   "delay": "150ms",
   "legacyWatch": true
