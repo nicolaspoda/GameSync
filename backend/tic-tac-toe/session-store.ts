@@ -1,4 +1,4 @@
-import { TIC_TAC_TOE_CONFIG } from "./constants.ts";
+import { TIC_TAC_TOE_CONFIG } from "./constants";
 import type {
   AttachSocketToSessionInput,
   PlayerId,
