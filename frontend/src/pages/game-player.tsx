@@ -46,7 +46,7 @@ export default function GamePlayerPage() {
                 Game not found
               </CardTitle>
               <CardDescription>
-                This player route does not match any known game entry yet.
+                This player route does not match any game currently available in the catalog.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -102,8 +102,7 @@ export default function GamePlayerPage() {
                       {game.title}
                     </p>
                     <p className="max-w-md text-sm leading-6 text-stone-600">
-                      This game is listed in the catalog, but it is not playable
-                      inside the player page yet.
+                      This game is listed in the catalog, but it does not currently have an in-player experience.
                     </p>
                   </div>
                 </div>

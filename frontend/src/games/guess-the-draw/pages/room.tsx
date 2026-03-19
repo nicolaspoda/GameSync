@@ -111,7 +111,7 @@ export default function GuessTheDrawRoom() {
 
   useEffect(() => {
     if (!session) {
-      setConnectionLabel("Missing session");
+      setConnectionLabel("Session unavailable");
       return;
     }
 
@@ -272,7 +272,7 @@ export default function GuessTheDrawRoom() {
   const displayedWord =
     (isSelfDrawing || hasSelfGuessedCorrectly) && activeTurn?.word?.trim()
       ? activeTurn.word
-      : roomState?.round.wordMasked?.trim() || "No word yet";
+      : roomState?.round.wordMasked?.trim() || "Word pending";
   const roundPointGains = players
     .map((player) => ({
       playerId: player.id,
@@ -486,8 +486,8 @@ export default function GuessTheDrawRoom() {
           <Card className="border border-stone-200/80 bg-white/90">
             <CardContent className="py-10">
               <EmptyState
-                title="No room session found"
-                description="Open this page through the join flow once you start redirecting, or pass the session through route state."
+                title="Session unavailable"
+                description="Rejoin the room from the lobby to restore your player session."
               />
             </CardContent>
           </Card>
@@ -515,8 +515,8 @@ export default function GuessTheDrawRoom() {
                       </CardTitle>
                       <CardDescription className="text-sm leading-6 text-stone-600">
                         {roomState?.status === "drawing"
-                          ? "Everyone can draw for now while the turn system is taking shape."
-                          : "The board stays open between turns so everyone can see the current state."}
+                          ? "The active drawer can sketch while everyone else races to guess the word."
+                          : "The board stays visible between turns so everyone can follow the room state."}
                       </CardDescription>
                     </div>
 
