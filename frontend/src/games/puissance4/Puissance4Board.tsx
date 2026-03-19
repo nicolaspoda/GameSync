@@ -1,10 +1,21 @@
 import { cn } from '@/lib/utils'
-import Puissance4TokenAvatar from './Puissance4TokenAvatar.jsx'
+import Puissance4TokenAvatar from './Puissance4TokenAvatar'
+import type { Puissance4Board as Puissance4BoardState } from './types'
 
-function Puissance4Board({ board, onClickColumn, disabled = false }) {
+interface Puissance4BoardProps {
+  board: Puissance4BoardState
+  onClickColumn: (columnIndex: number) => void
+  disabled?: boolean
+}
+
+function Puissance4Board({
+  board,
+  onClickColumn,
+  disabled = false,
+}: Puissance4BoardProps) {
   return (
     <div className="grid grid-cols-7 gap-2 rounded-[1.75rem] bg-[linear-gradient(180deg,_#2563eb_0%,_#1d4ed8_100%)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] sm:gap-3 sm:p-4">
-      {board[0].map((_, columnIndex) => (
+      {board[0]?.map((_, columnIndex) => (
         <button
           key={columnIndex}
           type="button"

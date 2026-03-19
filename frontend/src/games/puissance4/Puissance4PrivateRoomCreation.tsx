@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -9,15 +9,28 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { backendBaseUrl } from './config.js'
+import { backendBaseUrl } from './config'
+import type { Puissance4RoomPayload } from './types'
 
-function Puissance4PrivateRoomCreation({ onRoomCreated, onBack }) {
+interface CreatePrivateRoomResponse extends Puissance4RoomPayload {
+  error?: string
+}
+
+interface Puissance4PrivateRoomCreationProps {
+  onRoomCreated: (payload: Puissance4RoomPayload) => void
+  onBack: () => void
+}
+
+function Puissance4PrivateRoomCreation({
+  onRoomCreated,
+  onBack,
+}: Puissance4PrivateRoomCreationProps) {
   const [roomName, setRoomName] = useState('')
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const trimmed = roomName.trim()
     const trimmedUsername = username.trim()
@@ -28,30 +41,32 @@ function Puissance4PrivateRoomCreation({ onRoomCreated, onBack }) {
     setError('')
     setIsLoading(true)
     try {
-      const response = await fetch(
-        `${backendBaseUrl}/api/puissance4/create-private-room`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: trimmedUsername,
-            roomName: trimmed,
-          }),
+      const response = await fetch(`${backendBaseUrl}/api/puissance4/create-private-room`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      )
+        body: JSON.stringify({
+          username: trimmedUsername,
+          roomName: trimmed,
+        }),
+      })
       if (!response.ok) {
-        throw new Error("Impossible de créer la salle privée.")
+        const payload = (await response.json().catch(() => null)) as
+          | Partial<CreatePrivateRoomResponse>
+          | null
+        throw new Error(payload?.error || 'Impossible de creer la salle privee.')
       }
-      const data = await response.json()
+      const data = (await response.json()) as CreatePrivateRoomResponse
       onRoomCreated({
         roomCode: data.roomCode,
         roomName: data.roomName,
         playerId: data.playerId,
       })
     } catch (submitError) {
-      setError(submitError.message)
+      setError(
+        submitError instanceof Error ? submitError.message : 'Impossible de creer la salle privee.',
+      )
     } finally {
       setIsLoading(false)
     }
@@ -106,7 +121,7 @@ function Puissance4PrivateRoomCreation({ onRoomCreated, onBack }) {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <Button className="h-10 w-full" type="submit" disabled={isLoading}>
-                {isLoading ? 'Création...' : 'Créer la salle'}
+                {isLoading ? 'Creation...' : 'Creer la salle'}
               </Button>
               <Button
                 className="h-10 w-full"

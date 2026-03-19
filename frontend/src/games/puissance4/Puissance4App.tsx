@@ -1,42 +1,41 @@
-import { useState } from "react";
-import Puissance4Lobby from "./Puissance4Lobby.jsx";
-import Puissance4PrivateRoomCreation from "./Puissance4PrivateRoomCreation.jsx";
-import Puissance4Game from "./Puissance4Game.jsx";
-
-const SCREENS = {
-  LOBBY: "lobby",
-  PRIVATE_ROOM: "private-room",
-  GAME: "game",
-};
+import { useState } from 'react'
+import Puissance4Lobby from './Puissance4Lobby'
+import Puissance4PrivateRoomCreation from './Puissance4PrivateRoomCreation'
+import Puissance4Game from './Puissance4Game'
+import type { Puissance4RoomPayload, Puissance4RoomSession, Puissance4Screen } from './types'
 
 function Puissance4App() {
-  const [screen, setScreen] = useState(SCREENS.LOBBY);
-  const [currentRoom, setCurrentRoom] = useState(null);
+  const [screen, setScreen] = useState<Puissance4Screen>('lobby')
+  const [currentRoom, setCurrentRoom] = useState<Puissance4RoomSession | null>(null)
 
-  const handleJoinRoom = ({ roomCode, roomName, playerId }) => {
+  const handleJoinRoom = ({ roomCode, roomName, playerId }: Puissance4RoomPayload) => {
     setCurrentRoom({
       code: roomCode,
       name: roomName,
       isPrivate: false,
       playerId,
-    });
-    setScreen(SCREENS.GAME);
-  };
+    })
+    setScreen('game')
+  }
 
-  const handlePrivateRoomCreated = ({ roomCode, roomName, playerId }) => {
+  const handlePrivateRoomCreated = ({
+    roomCode,
+    roomName,
+    playerId,
+  }: Puissance4RoomPayload) => {
     setCurrentRoom({
       code: roomCode,
       name: roomName,
       isPrivate: true,
       playerId,
-    });
-    setScreen(SCREENS.GAME);
-  };
+    })
+    setScreen('game')
+  }
 
   const handleLeaveGame = () => {
-    setCurrentRoom(null);
-    setScreen(SCREENS.LOBBY);
-  };
+    setCurrentRoom(null)
+    setScreen('lobby')
+  }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,125,96,0.18),_transparent_28%),linear-gradient(180deg,_#fff8ef_0%,_#f4efe7_100%)] px-6 py-10">
@@ -54,26 +53,26 @@ function Puissance4App() {
           </p>
         </section>
 
-        {screen === SCREENS.LOBBY && (
+        {screen === 'lobby' && (
           <Puissance4Lobby
             onJoinRoom={handleJoinRoom}
-            onCreatePrivateRoom={() => setScreen(SCREENS.PRIVATE_ROOM)}
+            onCreatePrivateRoom={() => setScreen('private-room')}
           />
         )}
 
-        {screen === SCREENS.PRIVATE_ROOM && (
+        {screen === 'private-room' && (
           <Puissance4PrivateRoomCreation
             onRoomCreated={handlePrivateRoomCreated}
-            onBack={() => setScreen(SCREENS.LOBBY)}
+            onBack={() => setScreen('lobby')}
           />
         )}
 
-        {screen === SCREENS.GAME && currentRoom && (
+        {screen === 'game' && currentRoom && (
           <Puissance4Game room={currentRoom} onLeave={handleLeaveGame} />
         )}
       </div>
     </div>
-  );
+  )
 }
 
-export default Puissance4App;
+export default Puissance4App

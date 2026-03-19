@@ -1,8 +1,9 @@
 import { cn } from '@/lib/utils'
 import johnImage from '@/assets/john.png'
 import larryImage from '@/assets/larry.png'
+import type { Puissance4Color } from './types'
 
-const tokenMeta = {
+const tokenMeta: Record<Puissance4Color, { image: string; label: string }> = {
   RED: {
     image: larryImage,
     label: 'Larry',
@@ -13,11 +14,21 @@ const tokenMeta = {
   },
 }
 
-export function getPuissance4TokenLabel(color) {
+export function getPuissance4TokenLabel(color: Puissance4Color | null): string | null {
   return color ? tokenMeta[color]?.label ?? color : null
 }
 
-function Puissance4TokenAvatar({ color, className, imageClassName }) {
+interface Puissance4TokenAvatarProps {
+  color: Puissance4Color | null
+  className?: string
+  imageClassName?: string
+}
+
+function Puissance4TokenAvatar({
+  color,
+  className,
+  imageClassName,
+}: Puissance4TokenAvatarProps) {
   if (!color || !tokenMeta[color]) {
     return (
       <div

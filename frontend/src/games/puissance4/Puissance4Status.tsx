@@ -1,14 +1,25 @@
 import { cn } from '@/lib/utils'
-import Puissance4TokenAvatar, { getPuissance4TokenLabel } from './Puissance4TokenAvatar.jsx'
+import Puissance4TokenAvatar, { getPuissance4TokenLabel } from './Puissance4TokenAvatar'
+import type { Puissance4GameState } from './types'
 
-function Puissance4Status({ gameState, roomCode, currentPlayerId }) {
+interface Puissance4StatusProps {
+  gameState: Puissance4GameState
+  roomCode: string
+  currentPlayerId: string
+}
+
+function Puissance4Status({
+  gameState,
+  roomCode,
+  currentPlayerId,
+}: Puissance4StatusProps) {
   const { currentPlayer, winner, players = [] } = gameState
   const currentTurnPlayer = players.find((player) => player.color === currentPlayer)
   const me = players.find((player) => player.id === currentPlayerId)
 
   let label = 'En attente du prochain coup'
   if (players.length < 2) {
-    label = "En attente d'un deuxième joueur"
+    label = "En attente d'un deuxieme joueur"
   } else if (winner === 'DRAW') {
     label = 'Match nul'
   } else if (winner) {
@@ -33,10 +44,10 @@ function Puissance4Status({ gameState, roomCode, currentPlayerId }) {
           )}
         >
           <span className="size-2 rounded-full bg-current" />
-          {winner ? 'Partie terminée' : players.length < 2 ? 'En attente' : 'Tour en cours'}
+          {winner ? 'Partie terminee' : players.length < 2 ? 'En attente' : 'Tour en cours'}
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-stone-900">État de la partie</h3>
+          <h3 className="text-lg font-semibold text-stone-900">Etat de la partie</h3>
           <p className="mt-1 text-sm leading-6 text-stone-600">{label}</p>
         </div>
         <div className="rounded-2xl border border-stone-200 bg-stone-50/80 p-4">

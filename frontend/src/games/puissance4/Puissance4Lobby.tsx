@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -9,15 +9,28 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { backendBaseUrl } from './config.js'
+import { backendBaseUrl } from './config'
+import type { Puissance4RoomPayload } from './types'
 
-function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom }) {
+interface JoinRoomResponse extends Puissance4RoomPayload {
+  error?: string
+}
+
+interface Puissance4LobbyProps {
+  onJoinRoom: (payload: Puissance4RoomPayload) => void
+  onCreatePrivateRoom: () => void
+}
+
+function Puissance4Lobby({
+  onJoinRoom,
+  onCreatePrivateRoom,
+}: Puissance4LobbyProps) {
   const [gameCode, setGameCode] = useState('')
   const [username, setUsername] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleJoinRandom = async (event) => {
+  const handleJoinRandom = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const trimmedUsername = username.trim()
     if (!trimmedUsername) {
@@ -35,23 +48,23 @@ function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom }) {
         body: JSON.stringify({ username: trimmedUsername }),
       })
       if (!response.ok) {
-        const payload = await response.json().catch(() => null)
+        const payload = (await response.json().catch(() => null)) as Partial<JoinRoomResponse> | null
         throw new Error(payload?.error || 'Impossible de rejoindre une partie.')
       }
-      const data = await response.json()
+      const data = (await response.json()) as JoinRoomResponse
       onJoinRoom({
         roomCode: data.roomCode,
         roomName: data.roomName,
         playerId: data.playerId,
       })
     } catch (joinError) {
-      setError(joinError.message)
+      setError(joinError instanceof Error ? joinError.message : 'Impossible de rejoindre une partie.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const trimmedCode = gameCode.trim().toUpperCase()
     const trimmedUsername = username.trim()
@@ -65,33 +78,32 @@ function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom }) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(
-        `${backendBaseUrl}/api/puissance4/join-room-by-code`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: trimmedUsername,
-            roomCode: trimmedCode,
-          }),
+      const response = await fetch(`${backendBaseUrl}/api/puissance4/join-room-by-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      )
+        body: JSON.stringify({
+          username: trimmedUsername,
+          roomCode: trimmedCode,
+        }),
+      })
 
       if (!response.ok) {
-        const payload = await response.json().catch(() => null)
-        throw new Error(payload?.error || "Impossible de rejoindre cette partie.")
+        const payload = (await response.json().catch(() => null)) as Partial<JoinRoomResponse> | null
+        throw new Error(payload?.error || 'Impossible de rejoindre cette partie.')
       }
 
-      const data = await response.json()
+      const data = (await response.json()) as JoinRoomResponse
       onJoinRoom({
         roomCode: data.roomCode,
         roomName: data.roomName,
         playerId: data.playerId,
       })
     } catch (submitError) {
-      setError(submitError.message)
+      setError(
+        submitError instanceof Error ? submitError.message : 'Impossible de rejoindre cette partie.',
+      )
     } finally {
       setIsLoading(false)
     }
@@ -156,7 +168,7 @@ function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom }) {
             </div>
 
             <Button className="h-10 w-full" type="submit" disabled={isLoading}>
-              {isLoading ? 'Recherche de partie...' : 'Rejoindre une partie aléatoire'}
+              {isLoading ? 'Recherche de partie...' : 'Rejoindre une partie aleatoire'}
             </Button>
           </form>
 
@@ -183,7 +195,7 @@ function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom }) {
                   variant="outline"
                   onClick={onCreatePrivateRoom}
                 >
-                  Créer une salle privée
+                  Creer une salle privee
                 </Button>
               </div>
             </form>
