@@ -1,11 +1,7 @@
 import { useState } from 'react'
+import { backendBaseUrl } from './config.js'
 
-const backendBaseUrl =
-  import.meta.env.VITE_BACKEND_URL && import.meta.env.VITE_BACKEND_URL.trim() !== ''
-    ? import.meta.env.VITE_BACKEND_URL
-    : 'http://localhost:3000'
-
-function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom, onBack }) {
+function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom }) {
   const [gameCode, setGameCode] = useState('')
   const [username, setUsername] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -95,9 +91,6 @@ function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom, onBack }) {
     <section className="p4-screen">
       <header className="p4-header">
         <h2>Puissance 4 - Lobby</h2>
-        <button className="ghost-button" type="button" onClick={onBack}>
-          Retour au hub
-        </button>
       </header>
 
       <div className="p4-lobby-layout">
@@ -172,4 +165,3 @@ function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom, onBack }) {
 }
 
 export default Puissance4Lobby
-

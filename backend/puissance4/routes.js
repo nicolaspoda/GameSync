@@ -5,7 +5,7 @@ const {
   generateRoomCode,
   getOrCreateWaitingRoom,
   cancelRoomDeletion,
-} = require('../services/puissance4Game')
+} = require('./game')
 
 const router = express.Router()
 
@@ -81,9 +81,7 @@ router.post('/create-private-room', (request, response) => {
 router.post('/join-room-by-code', (request, response) => {
   const { username, roomCode } = request.body
   if (!username || !roomCode) {
-    response
-      .status(400)
-      .json({ error: 'Pseudo et code de partie requis.' })
+    response.status(400).json({ error: 'Pseudo et code de partie requis.' })
     return
   }
 
@@ -126,10 +124,16 @@ router.post('/join-room-by-code', (request, response) => {
       players: room.players,
     })
     // eslint-disable-next-line no-console
-    console.log('[P4 REST] join-room-by-code: salle', normalizedRoomCode, '→', room.players.length, 'joueur(s), emit OK')
+    console.log(
+      '[P4 REST] join-room-by-code: salle',
+      normalizedRoomCode,
+      '→',
+      room.players.length,
+      'joueur(s), emit OK',
+    )
   } else {
     // eslint-disable-next-line no-console
-    console.warn('[P4 REST] join-room-by-code: io non disponible, pas d’emit')
+    console.warn('[P4 REST] join-room-by-code: io non disponible, pas d emit')
   }
 
   response.json({
@@ -140,4 +144,3 @@ router.post('/join-room-by-code', (request, response) => {
 })
 
 module.exports = router
-

@@ -2,8 +2,7 @@ const express = require('express')
 const http = require('http')
 const { Server } = require('socket.io')
 const cors = require('cors')
-const puissance4Router = require('./routes/puissance4')
-const { registerPuissance4Sockets } = require('./sockets/puissance4')
+const { puissance4Router, registerPuissance4Sockets } = require('./puissance4')
 
 const app = express()
 

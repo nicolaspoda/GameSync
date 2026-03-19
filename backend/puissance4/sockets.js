@@ -4,7 +4,7 @@ const {
   rooms,
   scheduleRoomDeletion,
   cancelRoomDeletion,
-} = require('../services/puissance4Game')
+} = require('./game')
 
 function registerPuissance4Sockets(io) {
   io.on('connection', (socket) => {
@@ -31,7 +31,6 @@ function registerPuissance4Sockets(io) {
         return
       }
 
-      // Si quelqu'un quitte, on repart sur un état propre.
       room.gameState = createInitialGameState()
       syncRoomState(roomCode)
     }
@@ -50,20 +49,18 @@ function registerPuissance4Sockets(io) {
       socket.data.roomCode = normalizedRoomCode
       if (playerId) socket.data.playerId = playerId
 
-      if (playerId) {
-        const player = room.players.find((candidate) => candidate.id === playerId)
-        if (player) {
-          // ok
-        } else {
-          // Si l'id n'est pas connu côté serveur, on évite de bloquer le leave:
-          // le client a probablement déjà récupéré un nouvel id via l'API REST.
-        }
-      }
-
       socket.join(normalizedRoomCode)
       syncRoomState(normalizedRoomCode)
       // eslint-disable-next-line no-console
-      console.log('[P4 Socket] joinPuissance4Room:', normalizedRoomCode, 'playerId=', playerId, '→ salle a', room.players.length, 'joueur(s)')
+      console.log(
+        '[P4 Socket] joinPuissance4Room:',
+        normalizedRoomCode,
+        'playerId=',
+        playerId,
+        '→ salle a',
+        room.players.length,
+        'joueur(s)',
+      )
     })
 
     socket.on('leavePuissance4Room', ({ roomCode, playerId }) => {
@@ -102,9 +99,7 @@ function registerPuissance4Sockets(io) {
         }
       }
 
-      if (!placed) {
-        return
-      }
+      if (!placed) return
 
       const winner = checkWinner(nextBoard)
       const nextState = {
@@ -131,11 +126,8 @@ function registerPuissance4Sockets(io) {
       syncRoomState(normalizedRoomCode)
     })
 
-    // On ne retire pas le joueur à la déconnexion du socket (onglet en arrière-plan,
-    // reconnexion, etc.). Un joueur est retiré uniquement via "Quitter la partie".
     socket.on('disconnect', () => {})
   })
 }
 
 module.exports = { registerPuissance4Sockets }
-

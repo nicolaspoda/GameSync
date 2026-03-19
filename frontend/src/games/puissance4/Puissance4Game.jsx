@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import socket from '../socket.js'
+import socket from './socket.js'
 import Puissance4Board from './Puissance4Board.jsx'
 import Puissance4Status from './Puissance4Status.jsx'
 import Puissance4Actions from './Puissance4Actions.jsx'
@@ -124,9 +124,9 @@ function Puissance4Game({ room, onLeave }) {
               <button
                 type="button"
                 className="primary-button"
-onClick={handleLeave}
+                onClick={handleLeave}
               >
-              Quitter le lobby
+                Quitter le lobby
               </button>
             </div>
           </div>
@@ -137,4 +137,3 @@ onClick={handleLeave}
 }
 
 export default Puissance4Game
-

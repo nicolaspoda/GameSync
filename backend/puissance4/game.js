@@ -120,4 +120,3 @@ module.exports = {
   scheduleRoomDeletion,
   cancelRoomDeletion,
 }
-

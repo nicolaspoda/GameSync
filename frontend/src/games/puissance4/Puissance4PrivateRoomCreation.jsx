@@ -1,9 +1,5 @@
-import { useMemo, useState } from 'react'
-
-const backendBaseUrl =
-  import.meta.env.VITE_BACKEND_URL && import.meta.env.VITE_BACKEND_URL.trim() !== ''
-    ? import.meta.env.VITE_BACKEND_URL
-    : 'http://localhost:3000'
+import { useState } from 'react'
+import { backendBaseUrl } from './config.js'
 
 function Puissance4PrivateRoomCreation({ onRoomCreated, onBack }) {
   const [roomName, setRoomName] = useState('')
@@ -98,4 +94,3 @@ function Puissance4PrivateRoomCreation({ onRoomCreated, onBack }) {
 }
 
 export default Puissance4PrivateRoomCreation
-
