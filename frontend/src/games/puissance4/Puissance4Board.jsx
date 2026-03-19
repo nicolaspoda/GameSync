@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import Puissance4TokenAvatar from './Puissance4TokenAvatar.jsx'
 
 function Puissance4Board({ board, onClickColumn, disabled = false }) {
   return (
@@ -25,12 +26,17 @@ function Puissance4Board({ board, onClickColumn, disabled = false }) {
                   key={key}
                   className={cn(
                     'aspect-square w-full rounded-full border border-black/10 bg-white shadow-[inset_0_3px_8px_rgba(15,23,42,0.12)]',
-                    cell === 'RED' &&
-                      'bg-[linear-gradient(180deg,_#fb7185_0%,_#dc2626_100%)] shadow-[inset_0_3px_8px_rgba(255,255,255,0.2)]',
-                    cell === 'YELLOW' &&
-                      'bg-[linear-gradient(180deg,_#fde68a_0%,_#eab308_100%)] shadow-[inset_0_3px_8px_rgba(255,255,255,0.25)]',
                   )}
-                />
+                >
+                  {cell ? (
+                    <div className="flex size-full items-center justify-center p-[6%]">
+                      <Puissance4TokenAvatar
+                        color={cell}
+                        className="size-full border-0 bg-transparent p-0 shadow-none"
+                      />
+                    </div>
+                  ) : null}
+                </div>
               )
             })}
         </button>

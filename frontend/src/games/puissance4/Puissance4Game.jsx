@@ -11,6 +11,7 @@ import socket from './socket.js'
 import Puissance4Board from './Puissance4Board.jsx'
 import Puissance4Status from './Puissance4Status.jsx'
 import Puissance4Actions from './Puissance4Actions.jsx'
+import { getPuissance4TokenLabel } from './Puissance4TokenAvatar.jsx'
 
 const EMPTY_BOARD = Array.from({ length: 6 }, () =>
   Array.from({ length: 7 }, () => null),
@@ -148,7 +149,7 @@ function Puissance4Game({ room, onLeave }) {
             <p className="mt-3 text-sm leading-6 text-stone-600">
               {gameState.winner === 'DRAW'
                 ? 'Match nul'
-                : `Victoire de ${gameState.winner === 'RED' ? 'Rouge' : 'Jaune'}`}
+                : `Victoire de ${getPuissance4TokenLabel(gameState.winner)}`}
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Button
