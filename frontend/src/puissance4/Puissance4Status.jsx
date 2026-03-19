@@ -1,4 +1,4 @@
-function Puissance4Status({ gameState }) {
+function Puissance4Status({ gameState, roomCode }) {
   const { currentPlayer, winner, players = [] } = gameState
 
   let label = 'En attente du prochain coup'
@@ -16,6 +16,23 @@ function Puissance4Status({ gameState }) {
     <div className="p4-status">
       <h3>État de la partie</h3>
       <p>{label}</p>
+      {players.length < 2 && roomCode && (
+        <div className="p4-waiting-help" style={{
+          marginTop: 12,
+          padding: 12,
+          background: 'var(--surface-alt, rgba(255,255,255,0.06))',
+          borderRadius: 8,
+          fontSize: 13,
+          lineHeight: 1.5,
+        }}>
+          <strong>Pour ajouter le 2ᵉ joueur :</strong>
+          <ol style={{ margin: '8px 0 0', paddingLeft: 18 }}>
+            <li>Ouvre un <strong>nouvel onglet</strong> (Ctrl+T ou Cmd+T), pas un doublon d’onglet.</li>
+            <li>Va sur <strong>{typeof window !== 'undefined' ? window.location.origin : 'localhost:5173'}</strong></li>
+            <li>Puissance 4 → Rejoindre avec le code → entre le code <strong>{roomCode}</strong> et un <strong>autre pseudo</strong>.</li>
+          </ol>
+        </div>
+      )}
       {players.length > 0 && (
         <div className="p4-players">
           <h4>Joueurs</h4>

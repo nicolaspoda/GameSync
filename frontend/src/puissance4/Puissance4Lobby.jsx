@@ -136,13 +136,28 @@ function Puissance4Lobby({ onJoinRoom, onCreatePrivateRoom, onBack }) {
             />
 
             <div className="p4-actions-row">
-              <button className="secondary-button" type="submit">
+              <button
+                className="primary-button"
+                type="submit"
+                style={{
+                  background: 'var(--accent)',
+                  color: '#fff',
+                  boxShadow: 'var(--shadow)',
+                  border: 'none',
+                }}
+              >
                 Rejoindre avec un code
               </button>
               <button
-                className="secondary-button"
+                className="primary-button"
                 type="button"
                 onClick={onCreatePrivateRoom}
+                style={{
+                  background: 'var(--accent)',
+                  color: '#fff',
+                  boxShadow: 'var(--shadow)',
+                  border: 'none',
+                }}
               >
                 Créer une salle privée
               </button>

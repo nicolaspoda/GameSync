@@ -41,7 +41,10 @@ function registerPuissance4Sockets(io) {
       if (!normalizedRoomCode) return
 
       const room = rooms.get(normalizedRoomCode)
-      if (!room) return
+      if (!room) {
+        socket.emit('puissance4RoomNotFound', { roomCode: normalizedRoomCode })
+        return
+      }
       cancelRoomDeletion(normalizedRoomCode)
 
       socket.data.roomCode = normalizedRoomCode
@@ -59,6 +62,8 @@ function registerPuissance4Sockets(io) {
 
       socket.join(normalizedRoomCode)
       syncRoomState(normalizedRoomCode)
+      // eslint-disable-next-line no-console
+      console.log('[P4 Socket] joinPuissance4Room:', normalizedRoomCode, 'playerId=', playerId, '→ salle a', room.players.length, 'joueur(s)')
     })
 
     socket.on('leavePuissance4Room', ({ roomCode, playerId }) => {
@@ -126,12 +131,9 @@ function registerPuissance4Sockets(io) {
       syncRoomState(normalizedRoomCode)
     })
 
-    socket.on('disconnect', () => {
-      const roomCode = socket.data.roomCode
-      const playerId = socket.data.playerId
-      if (!roomCode || !playerId) return
-      removePlayerFromRoom({ roomCode, playerId })
-    })
+    // On ne retire pas le joueur à la déconnexion du socket (onglet en arrière-plan,
+    // reconnexion, etc.). Un joueur est retiré uniquement via "Quitter la partie".
+    socket.on('disconnect', () => {})
   })
 }
 

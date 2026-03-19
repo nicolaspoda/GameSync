@@ -19,7 +19,11 @@ function Puissance4Game({ room, onLeave }) {
   const [gameState, setGameState] = useState(INITIAL_GAME_STATE)
 
   useEffect(() => {
-    socket.emit('joinPuissance4Room', { roomCode: room.code, playerId: room.playerId })
+    const joinRoom = () => {
+      socket.emit('joinPuissance4Room', { roomCode: room.code, playerId: room.playerId })
+    }
+
+    joinRoom()
 
     const handleGameStateUpdate = (nextState) => {
       setGameState((current) => ({
@@ -28,13 +32,22 @@ function Puissance4Game({ room, onLeave }) {
       }))
     }
 
+    const handleRoomNotFound = () => {
+      onLeave()
+    }
+
     socket.on('puissance4GameStateUpdate', handleGameStateUpdate)
+    socket.on('connect', joinRoom)
+    socket.on('puissance4RoomNotFound', handleRoomNotFound)
 
     return () => {
-      socket.emit('leavePuissance4Room', { roomCode: room.code, playerId: room.playerId })
+      socket.off('connect', joinRoom)
+      socket.off('puissance4RoomNotFound', handleRoomNotFound)
       socket.off('puissance4GameStateUpdate', handleGameStateUpdate)
+      // Ne pas émettre leave ici : en dev React Strict Mode fait effet → cleanup → effet,
+      // ce qui vidait la salle avant le 2ᵉ join. On quitte uniquement au clic sur "Quitter la partie".
     }
-  }, [room.code, room.playerId])
+  }, [room.code, room.playerId, onLeave])
 
   const handleClickColumn = (columnIndex) => {
     socket.emit('puissance4OnClickColumn', {
@@ -46,6 +59,11 @@ function Puissance4Game({ room, onLeave }) {
   const handleRestart = () => {
     socket.emit('puissance4Restart', { roomCode: room.code })
     setGameState(INITIAL_GAME_STATE)
+  }
+
+  const handleLeave = () => {
+    socket.emit('leavePuissance4Room', { roomCode: room.code, playerId: room.playerId })
+    onLeave()
   }
 
   const players = gameState.players ?? []
@@ -62,7 +80,7 @@ function Puissance4Game({ room, onLeave }) {
             Salle&nbsp;: <strong>{room.name}</strong> ({room.code})
           </p>
         </div>
-        <button className="ghost-button" type="button" onClick={onLeave}>
+        <button className="ghost-button" type="button" onClick={handleLeave}>
           Retour au lobby
         </button>
       </header>
@@ -78,10 +96,10 @@ function Puissance4Game({ room, onLeave }) {
 
         <div className="p4-sidebar">
           <div className="p4-panel">
-            <Puissance4Status gameState={gameState} />
+            <Puissance4Status gameState={gameState} roomCode={room.code} />
           </div>
           <div className="p4-panel">
-            <Puissance4Actions onRestart={handleRestart} onLeave={onLeave} />
+            <Puissance4Actions onRestart={handleRestart} onLeave={handleLeave} />
           </div>
         </div>
       </div>
@@ -106,9 +124,9 @@ function Puissance4Game({ room, onLeave }) {
               <button
                 type="button"
                 className="primary-button"
-                onClick={onLeave}
+onClick={handleLeave}
               >
-                Quitter le lobby
+              Quitter le lobby
               </button>
             </div>
           </div>

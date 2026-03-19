@@ -27,6 +27,14 @@ router.post('/join-random-room', (request, response) => {
     room.players[1].color = 'YELLOW'
   }
 
+  const io = request.app.get('io') || request.socket?.server?.io
+  if (io) {
+    io.to(room.code).emit('puissance4GameStateUpdate', {
+      ...room.gameState,
+      players: room.players,
+    })
+  }
+
   response.json({
     roomCode: room.code,
     roomName: room.name,
@@ -54,6 +62,14 @@ router.post('/create-private-room', (request, response) => {
   const playerId = `p${Date.now()}${Math.random().toString(16).slice(2)}`
   room.players.push({ id: playerId, name: username, color: 'RED' })
   rooms.set(code, room)
+
+  const io = request.app.get('io') || request.socket?.server?.io
+  if (io) {
+    io.to(room.code).emit('puissance4GameStateUpdate', {
+      ...room.gameState,
+      players: room.players,
+    })
+  }
 
   response.json({
     roomCode: room.code,
@@ -102,6 +118,19 @@ router.post('/join-room-by-code', (request, response) => {
   }
 
   room.players.push(player)
+
+  const io = request.app.get('io') || request.socket?.server?.io
+  if (io) {
+    io.to(normalizedRoomCode).emit('puissance4GameStateUpdate', {
+      ...room.gameState,
+      players: room.players,
+    })
+    // eslint-disable-next-line no-console
+    console.log('[P4 REST] join-room-by-code: salle', normalizedRoomCode, '→', room.players.length, 'joueur(s), emit OK')
+  } else {
+    // eslint-disable-next-line no-console
+    console.warn('[P4 REST] join-room-by-code: io non disponible, pas d’emit')
+  }
 
   response.json({
     roomCode: room.code,
