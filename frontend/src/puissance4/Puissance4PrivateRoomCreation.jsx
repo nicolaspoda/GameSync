@@ -11,12 +11,6 @@ function Puissance4PrivateRoomCreation({ onRoomCreated, onBack }) {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const [roomCode, setRoomCode] = useState('')
-  const inviteLink = useMemo(
-    () => (roomCode ? `${window.location.origin}/puissance4/${roomCode}` : ''),
-    [roomCode],
-  )
-
   const handleSubmit = async (event) => {
     event.preventDefault()
     const trimmed = roomName.trim()
@@ -45,7 +39,6 @@ function Puissance4PrivateRoomCreation({ onRoomCreated, onBack }) {
         throw new Error("Impossible de créer la salle privée.")
       }
       const data = await response.json()
-      setRoomCode(data.roomCode)
       onRoomCreated({
         roomCode: data.roomCode,
         roomName: data.roomName,
@@ -92,18 +85,6 @@ function Puissance4PrivateRoomCreation({ onRoomCreated, onBack }) {
             onChange={(event) => setRoomName(event.target.value)}
             placeholder="Ex. Soirée entre amis"
           />
-
-          <div className="p4-field-group">
-            <span className="p4-field-label">Lien d&apos;invitation</span>
-            <div className="p4-invite-row">
-              <input
-                className="p4-input"
-                type="text"
-                value={inviteLink}
-                readOnly
-              />
-            </div>
-          </div>
 
           <button className="primary-button" type="submit" disabled={isLoading}>
             {isLoading ? 'Création...' : 'Créer la salle'}
