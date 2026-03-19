@@ -57,18 +57,19 @@ export function useGame(session: TicTacToeSession | null) {
 
     // ── Room state (mise à jour générique) ───────────────────────────────────
     function onRoomState(room: TicTacToeRoomState) {
-      setState((prev) => ({ ...prev, room }));
-    }
+        setState((prev) => ({ ...prev, room }));
+      
+        // Émet player:ready dès que le status passe à STARTING
+        if (room.status === "STARTING" && !hasEmittedReady.current) {
+          hasEmittedReady.current = true;
+          emitPlayerReady();
+        }
+      }
 
     // ── Game started → émet player:ready automatiquement ────────────────────
     function onGameStarted(room: TicTacToeRoomState) {
-      setState((prev) => ({ ...prev, room }));
-
-      if (!hasEmittedReady.current) {
-        hasEmittedReady.current = true;
-        emitPlayerReady();
+        setState((prev) => ({ ...prev, room }));
       }
-    }
 
     // ── Move played ──────────────────────────────────────────────────────────
     function onMovePlayed(room: TicTacToeRoomState) {
@@ -130,7 +131,7 @@ export function useGame(session: TicTacToeSession | null) {
   }, []);
 
   const restart = useCallback(() => {
-    hasEmittedReady.current = false;
+    hasEmittedReady.current = false; 
     emitRestart();
   }, []);
 
