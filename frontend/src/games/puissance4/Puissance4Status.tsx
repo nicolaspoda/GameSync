@@ -1,19 +1,31 @@
 import { cn } from '@/lib/utils'
+import Puissance4TokenAvatar, { getPuissance4TokenLabel } from './Puissance4TokenAvatar'
+import type { Puissance4GameState } from './types'
 
-function Puissance4Status({ gameState, roomCode, currentPlayerId }) {
+interface Puissance4StatusProps {
+  gameState: Puissance4GameState
+  roomCode: string
+  currentPlayerId: string
+}
+
+function Puissance4Status({
+  gameState,
+  roomCode,
+  currentPlayerId,
+}: Puissance4StatusProps) {
   const { currentPlayer, winner, players = [] } = gameState
   const currentTurnPlayer = players.find((player) => player.color === currentPlayer)
   const me = players.find((player) => player.id === currentPlayerId)
 
   let label = 'En attente du prochain coup'
   if (players.length < 2) {
-    label = "En attente d'un deuxième joueur"
+    label = "En attente d'un deuxieme joueur"
   } else if (winner === 'DRAW') {
     label = 'Match nul'
   } else if (winner) {
-    label = `Victoire de ${winner === 'RED' ? 'Rouge' : 'Jaune'}`
+    label = `Victoire de ${getPuissance4TokenLabel(winner)}`
   } else if (currentPlayer) {
-    label = `Tour de ${currentPlayer === 'RED' ? 'Rouge' : 'Jaune'}`
+    label = `Tour de ${getPuissance4TokenLabel(currentPlayer)}`
   }
 
   return (
@@ -32,10 +44,10 @@ function Puissance4Status({ gameState, roomCode, currentPlayerId }) {
           )}
         >
           <span className="size-2 rounded-full bg-current" />
-          {winner ? 'Partie terminée' : players.length < 2 ? 'En attente' : 'Tour en cours'}
+          {winner ? 'Partie terminee' : players.length < 2 ? 'En attente' : 'Tour en cours'}
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-stone-900">État de la partie</h3>
+          <h3 className="text-lg font-semibold text-stone-900">Etat de la partie</h3>
           <p className="mt-1 text-sm leading-6 text-stone-600">{label}</p>
         </div>
         <div className="rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
@@ -44,9 +56,13 @@ function Puissance4Status({ gameState, roomCode, currentPlayerId }) {
           </p>
           <p className="mt-2 font-mono text-lg text-stone-900">{roomCode}</p>
           {currentTurnPlayer ? (
-            <p className="mt-2 text-sm text-stone-600">
-              Joueur actif : <span className="font-medium text-stone-900">{currentTurnPlayer.name}</span>
-            </p>
+            <div className="mt-2 flex items-center gap-2 text-sm text-stone-600">
+              <span>Joueur actif :</span>
+              {currentTurnPlayer.color ? (
+                <Puissance4TokenAvatar color={currentTurnPlayer.color} className="size-7" />
+              ) : null}
+              <span className="font-medium text-stone-900">{currentTurnPlayer.name}</span>
+            </div>
           ) : null}
           {me ? (
             <p className="mt-1 text-sm text-stone-600">
@@ -68,22 +84,17 @@ function Puissance4Status({ gameState, roomCode, currentPlayerId }) {
                 className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3"
               >
                 <div className="flex items-center gap-3">
-                <span
-                  className={cn(
-                    'size-3 rounded-full',
-                    player.color === 'RED' && 'bg-rose-500',
-                    player.color === 'YELLOW' && 'bg-amber-400',
-                    !player.color && 'bg-stone-300',
+                  {player.color ? (
+                    <Puissance4TokenAvatar color={player.color} className="size-9" />
+                  ) : (
+                    <span className="size-3 rounded-full bg-stone-300" />
                   )}
-                />
-                <span className="text-sm font-medium text-stone-900">
-                  {player.name}{' '}
-                  {player.color === 'RED'
-                    ? '(Rouge)'
-                    : player.color === 'YELLOW'
-                      ? '(Jaune)'
-                      : ''}
-                </span>
+                  <div>
+                    <span className="text-sm font-medium text-stone-900">{player.name}</span>
+                    {player.color ? (
+                      <p className="text-xs text-stone-500">{getPuissance4TokenLabel(player.color)}</p>
+                    ) : null}
+                  </div>
                 </div>
                 {player.id === currentPlayerId ? (
                   <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700">

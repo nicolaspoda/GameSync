@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { alphabet, hangmanFrames, maxErrors } from './constants'
-import socket, { type HangmanGameState } from './socket'
+import socket, { type HangmanGameState, type HangmanPlayerNumber } from './socket'
+import HangmanPlayerAvatar, { getHangmanPlayerLabel } from './player-avatar'
 
 function HangmanApp() {
   const [username, setUsername] = useState('')
@@ -75,14 +76,18 @@ function HangmanApp() {
   const statusLabel = useMemo(() => {
     if (!gameState) return ''
     if (gameState.status === 'playing') {
-      if (gameState.currentPlayer === playerNumber) return 'À ton tour !'
-      return "Tour de l'adversaire"
+      if (gameState.currentPlayer === playerNumber) return `A ton tour avec ${getHangmanPlayerLabel(playerNumber as HangmanPlayerNumber)} !`
+      return `Tour de ${getHangmanPlayerLabel(gameState.currentPlayer as HangmanPlayerNumber)}`
     }
     if (gameState.status === 'won') {
-      return gameState.winner === playerNumber ? 'Tu as gagné !' : 'Tu as perdu.'
+      return gameState.winner === playerNumber
+        ? `Victoire de ${getHangmanPlayerLabel(playerNumber as HangmanPlayerNumber)} !`
+        : `${getHangmanPlayerLabel((playerNumber === 1 ? 2 : 1) as HangmanPlayerNumber)} gagne.`
     }
     if (gameState.status === 'lost') {
-      return gameState.winner === playerNumber ? 'Tu as gagné !' : 'Tu as perdu.'
+      return gameState.winner === playerNumber
+        ? `Victoire de ${getHangmanPlayerLabel(playerNumber as HangmanPlayerNumber)} !`
+        : `${getHangmanPlayerLabel((playerNumber === 1 ? 2 : 1) as HangmanPlayerNumber)} gagne.`
     }
     return ''
   }, [gameState, playerNumber])
@@ -100,6 +105,12 @@ function HangmanApp() {
   const showLobbyPage = !isInGame
   const activePlayerName =
     gameState?.currentPlayer === 1 ? player1Name : gameState?.currentPlayer === 2 ? player2Name : null
+  const activePlayerLabel =
+    gameState?.currentPlayer === 1
+      ? getHangmanPlayerLabel(1)
+      : gameState?.currentPlayer === 2
+        ? getHangmanPlayerLabel(2)
+        : null
 
   const statusTone =
     gameState?.status === 'won' || gameState?.status === 'lost'
@@ -231,8 +242,10 @@ function HangmanApp() {
                   {gameState?.status === 'playing' ? 'En cours' : 'Round terminé'}
                 </div>
                 <p className="text-sm font-medium text-stone-700">{statusLabel}</p>
-                {activePlayerName ? (
-                  <p className="text-sm text-stone-500">Tour: {activePlayerName}</p>
+                {activePlayerName && activePlayerLabel ? (
+                  <p className="text-sm text-stone-500">
+                    Tour: {activePlayerLabel} ({activePlayerName})
+                  </p>
                 ) : null}
               </div>
             </CardHeader>
@@ -241,8 +254,13 @@ function HangmanApp() {
           <section className="grid gap-6 xl:grid-cols-[minmax(240px,0.8fr)_minmax(0,1.4fr)_minmax(240px,0.8fr)]">
             <Card className="border border-stone-200/80 bg-white/90 shadow-[0_16px_50px_rgba(60,42,17,0.08)]">
               <CardHeader>
-                <CardTitle className="text-xl text-stone-900">{player1Name}</CardTitle>
-                <CardDescription>Joueur 1</CardDescription>
+                <div className="flex items-center gap-3">
+                  <HangmanPlayerAvatar playerNumber={1} className="size-12" />
+                  <div>
+                    <CardTitle className="text-xl text-stone-900">Larry</CardTitle>
+                    <CardDescription>{player1Name}</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="overflow-hidden rounded-2xl border border-stone-200 bg-stone-50/80 p-3">
@@ -320,8 +338,13 @@ function HangmanApp() {
 
             <Card className="border border-stone-200/80 bg-white/90 shadow-[0_16px_50px_rgba(60,42,17,0.08)]">
               <CardHeader>
-                <CardTitle className="text-xl text-stone-900">{player2Name}</CardTitle>
-                <CardDescription>Joueur 2</CardDescription>
+                <div className="flex items-center gap-3">
+                  <HangmanPlayerAvatar playerNumber={2} className="size-12" />
+                  <div>
+                    <CardTitle className="text-xl text-stone-900">John</CardTitle>
+                    <CardDescription>{player2Name}</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="overflow-hidden rounded-2xl border border-stone-200 bg-stone-50/80 p-3">

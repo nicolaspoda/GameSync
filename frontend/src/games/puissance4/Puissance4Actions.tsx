@@ -1,6 +1,11 @@
 import { Button } from '@/components/ui/button'
 
-function Puissance4Actions({ onRestart, onLeave }) {
+interface Puissance4ActionsProps {
+  onRestart: () => void
+  onLeave: () => void
+}
+
+function Puissance4Actions({ onRestart, onLeave }: Puissance4ActionsProps) {
   return (
     <div className="space-y-4">
       <div>

@@ -1,4 +1,5 @@
 import type { TicTacToePlayer, TicTacToeRoomState } from "@/games/tic-tac-toe/socket";
+import SymbolAvatar, { getSymbolLabel } from "./symbol-avatar";
 
 type Props = {
   room:        TicTacToeRoomState;
@@ -30,8 +31,11 @@ export default function WaitingScreen({ room, self, isConnected }: Props) {
             key={player.id}
             className="rounded-2xl border border-stone-200 bg-stone-50/80 p-4 text-center space-y-1"
           >
-            <p className="text-2xl font-bold text-stone-800">{player.symbol}</p>
+            <div className="flex justify-center">
+              <SymbolAvatar symbol={player.symbol} className="size-16" />
+            </div>
             <p className="text-sm font-medium text-stone-700 truncate">{player.username}</p>
+            <p className="text-xs text-stone-500">{getSymbolLabel(player.symbol)}</p>
             <span
               className={`inline-block h-2 w-2 rounded-full ${
                 player.isConnected ? "bg-green-400" : "bg-stone-300"

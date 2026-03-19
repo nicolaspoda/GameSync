@@ -7,7 +7,7 @@ import GuessTheDrawRoom from "./games/guess-the-draw/pages/room";
 import { Toaster } from "@/components/ui/sonner";
 import HomePage from "./pages/home";
 import GamePlayerPage from "./pages/game-player";
-import Puissance4App from "./games/puissance4/Puissance4App.jsx";
+import { Puissance4App } from "./games/puissance4";
 import HangmanApp from "./games/hangman/HangmanApp.tsx";
 import JoinTicTacToe from "./games/tic-tac-toe/pages/join.tsx";
 import TicTacToeRoom from "./games/tic-tac-toe/pages/room.tsx";
