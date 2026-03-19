@@ -7,6 +7,7 @@
     "guess-the-draw": "node dist/guess-the-draw/server.js",
     "hangman": "node dist/hangman/index.js",
     "puissance4": "node dist/puissance4/index.js",
+    "tic-tac-toe": "node dist/tic-tac-toe/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/hangman/index.js",
     "dev": "nodemon --watch . --ext ts,json --ignore dist --ignore node_modules --exec \"npm run build && node dist/hangman/index.js\""

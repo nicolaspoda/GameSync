@@ -7,10 +7,10 @@ import GuessTheDrawRoom from "./games/guess-the-draw/pages/room";
 import { Toaster } from "@/components/ui/sonner";
 import HomePage from "./pages/home";
 import GamePlayerPage from "./pages/game-player";
-
 import Puissance4App from "./games/puissance4/Puissance4App.jsx";
-
 import HangmanApp from "./games/hangman/HangmanApp.tsx";
+import JoinTicTacToe from "./games/tic-tac-toe/pages/join.tsx";
+import TicTacToeRoom from "./games/tic-tac-toe/pages/room.tsx";
 
 function App() {
   return (
@@ -30,6 +30,9 @@ function App() {
         />
         <Route path="/puissance4" element={<Puissance4App />} />
         <Route path="/hangman" element={<HangmanApp />} />
+
+        <Route path="/tic-tac-toe" element={<JoinTicTacToe />} />
+        <Route path="/tic-tac-toe/room/:roomId" element={<TicTacToeRoom />} />
       </Routes>
       <Toaster />
     </>
