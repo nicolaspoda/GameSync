@@ -181,25 +181,24 @@
   margin-bottom: 8px;
 }
 
-.hangman-body {
-  display: grid;
-  grid-template-columns: repeat(3, 10px);
-  grid-template-rows: repeat(4, 10px);
-  gap: 4px;
-  margin: 8px 0;
+.hangman-frame {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 8px;
 }
 
-.hangman-part {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: transparent;
-  border: 1px solid transparent;
+.hangman-image {
+  width: min(220px, 100%);
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.25);
+  object-fit: contain;
 }
 
-.hangman-part.visible {
-  background: #ff6b6b;
-  border-color: rgba(255, 255, 255, 0.6);
+.hangman-image--empty {
+  height: 300px;
 }
 
 .error-count {

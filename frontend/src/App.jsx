@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { io } from 'socket.io-client'
 import './App.css'
+import penduFrame1 from './assets/pendu_frame1.jpg'
+import penduFrame2 from './assets/pendu_frame2.jpg'
+import penduFrame3 from './assets/pendu_frame3.jpg'
+import penduFrame4 from './assets/pendu_frame4.jpg'
+import penduFrame5 from './assets/pendu_frame5.jpg'
 
 const socket = io('http://localhost:3000')
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+const PENDU_FRAMES = [penduFrame1, penduFrame2, penduFrame3, penduFrame4, penduFrame5]
+const MAX_ERRORS = PENDU_FRAMES.length
 
 function App() {
   const [username, setUsername] = useState('')
@@ -79,6 +86,13 @@ function App() {
 
   const player1Name = useMemo(() => gameState?.players?.[1] ?? 'Joueur 1', [gameState])
   const player2Name = useMemo(() => gameState?.players?.[2] ?? 'Joueur 2', [gameState])
+
+  const getPenduFrameSrc = (wrongCount) => {
+    const count = typeof wrongCount === 'number' ? wrongCount : 0
+    if (count <= 0) return null
+    const idx = Math.min(Math.max(count, 1), MAX_ERRORS) - 1
+    return PENDU_FRAMES[idx]
+  }
 
   const showLobbyPage = !isInGame
 
@@ -155,15 +169,24 @@ function App() {
             <div className="hangman-column">
               <div className="hangman-placeholder">
                 <div className="hangman-label">{player1Name}</div>
-                <div className="hangman-body">
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 0 ? 'visible' : ''}`} />
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 1 ? 'visible' : ''}`} />
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 2 ? 'visible' : ''}`} />
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 3 ? 'visible' : ''}`} />
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 4 ? 'visible' : ''}`} />
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 5 ? 'visible' : ''}`} />
+                <div className="hangman-frame">
+                  {getPenduFrameSrc(gameState?.wrongCounts?.[1]) ? (
+                    <img
+                      className="hangman-image"
+                      src={getPenduFrameSrc(gameState?.wrongCounts?.[1])}
+                      alt={`Pendu ${gameState?.wrongCounts?.[1] ?? 0}/${MAX_ERRORS}`}
+                      width={220}
+                      height={300}
+                      loading="eager"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className="hangman-image hangman-image--empty" aria-hidden="true" />
+                  )}
                 </div>
-                <div className="error-count">Erreurs : {gameState?.wrongCounts?.[1] ?? 0} / 6</div>
+                <div className="error-count">
+                  Erreurs : {gameState?.wrongCounts?.[1] ?? 0} / {MAX_ERRORS}
+                </div>
               </div>
             </div>
 
@@ -196,15 +219,24 @@ function App() {
             <div className="hangman-column">
               <div className="hangman-placeholder">
                 <div className="hangman-label">{player2Name}</div>
-                <div className="hangman-body">
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 0 ? 'visible' : ''}`} />
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 1 ? 'visible' : ''}`} />
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 2 ? 'visible' : ''}`} />
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 3 ? 'visible' : ''}`} />
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 4 ? 'visible' : ''}`} />
-                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 5 ? 'visible' : ''}`} />
+                <div className="hangman-frame">
+                  {getPenduFrameSrc(gameState?.wrongCounts?.[2]) ? (
+                    <img
+                      className="hangman-image"
+                      src={getPenduFrameSrc(gameState?.wrongCounts?.[2])}
+                      alt={`Pendu ${gameState?.wrongCounts?.[2] ?? 0}/${MAX_ERRORS}`}
+                      width={220}
+                      height={300}
+                      loading="eager"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className="hangman-image hangman-image--empty" aria-hidden="true" />
+                  )}
                 </div>
-                <div className="error-count">Erreurs : {gameState?.wrongCounts?.[2] ?? 0} / 6</div>
+                <div className="error-count">
+                  Erreurs : {gameState?.wrongCounts?.[2] ?? 0} / {MAX_ERRORS}
+                </div>
               </div>
             </div>
           </section>

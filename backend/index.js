@@ -133,7 +133,7 @@ io.on('connection', (socket) => {
       state.winner = playerNumber
     }
 
-    const maxErrors = 6
+    const maxErrors = 5
     if (state.wrongCounts[playerNumber] >= maxErrors) {
       state.status = 'lost'
       state.winner = playerNumber === 1 ? 2 : 1
