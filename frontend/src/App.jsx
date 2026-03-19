@@ -21,6 +21,10 @@ function App() {
           element={<JoinPrivateRoom />}
         />
         <Route path="/guess-the-draw/room/:roomId" element={<GuessTheDrawRoom />} />
+      
+        <Route path="/tic-tac-toe"              element={<JoinTicTacToe />} />
+        <Route path="/tic-tac-toe/room/:roomId" element={<TicTacToeRoom />} />
+            
       </Routes>
       <Toaster />
     </>

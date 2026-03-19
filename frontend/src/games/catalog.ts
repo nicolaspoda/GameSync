@@ -23,7 +23,8 @@ export const gameCatalog: GameCatalogEntry[] = [
     description: "Fast head-to-head rounds with simple rules and short matches.",
     accentClassName:
       "bg-[radial-gradient(circle_at_top_left,_rgba(115,170,255,0.22),_transparent_50%),linear-gradient(180deg,_#f6fbff_0%,_#eaf1f8_100%)]",
-    status: "coming-soon",
+    status: "available",
+    launchPath: "/tic-tac-toe",
   },
   {
     id: "hangman",
