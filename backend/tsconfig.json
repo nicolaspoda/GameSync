@@ -11,5 +11,5 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["guess-the-draw/**/*.ts", "puissance4/**/*.ts"]
+  "include": ["guess-the-draw/**/*.ts", "puissance4/**/*.ts", "hangman/**/*.ts"]
 }

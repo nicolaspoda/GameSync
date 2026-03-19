@@ -1,0 +1,276 @@
+.hangman-app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 32px;
+}
+
+.hangman-app-header {
+  text-align: center;
+}
+
+.hangman-game-title {
+  font-size: clamp(5.6rem, 8vw, 7.2rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.hangman-game-subtitle {
+  margin: 8px 0 0;
+  opacity: 0.8;
+}
+
+.hangman-app-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr);
+  gap: 32px;
+  align-items: stretch;
+}
+
+.hangman-app-main--lobby {
+  grid-template-columns: minmax(0, 520px);
+  justify-content: center;
+}
+
+.hangman-app-game {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hangman-app-game .hangman-welcome-card {
+  max-width: 720px;
+  width: 100%;
+  align-self: center;
+}
+
+.hangman-welcome-card {
+  border-radius: 16px;
+  padding: 24px 20px;
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent),
+    rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hangman-welcome-title {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.hangman-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hangman-form-label {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.hangman-text-input {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 10px 16px;
+  font-size: 1rem;
+  background: rgba(0, 0, 0, 0.4);
+  color: inherit;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.hangman-text-input::placeholder {
+  opacity: 0.6;
+}
+
+.hangman-text-input:focus-visible {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.hangman-primary-button {
+  margin-top: 8px;
+  border-radius: 999px;
+  border: none;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #ff6b6b, #ffb347);
+  color: #0a0a0a;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+}
+
+.hangman-primary-button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
+}
+
+.hangman-primary-button:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+}
+
+.hangman-layout-preview {
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.hangman-column {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hangman-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.hangman-center-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+.hangman-word-placeholder {
+  font-size: 1.6rem;
+  letter-spacing: 0.4em;
+}
+
+.hangman-label {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.hangman-frame {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 8px;
+}
+
+.hangman-image {
+  width: min(220px, 100%);
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.25);
+  object-fit: contain;
+}
+
+.hangman-image--empty {
+  height: 300px;
+}
+
+.hangman-error-count {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.hangman-alphabet-grid {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.hangman-alpha-button {
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.3);
+  color: inherit;
+  padding: 4px 0;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease, border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.hangman-alpha-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.hangman-alpha-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hangman-alpha-used {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.hangman-status-text {
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.hangman-error-text {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #ffb3b3;
+}
+
+.hangman-info-text {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+@media (max-width: 900px) {
+  .hangman-alphabet-grid {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+  }
+
+  .hangman-app-root {
+    padding-inline: 16px;
+  }
+
+  .hangman-app-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hangman-app-game .hangman-welcome-card {
+    max-width: 100%;
+  }
+
+  .hangman-layout-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto;
+  }
+
+  .hangman-center-column {
+    grid-column: 1 / -1;
+  }
+}
