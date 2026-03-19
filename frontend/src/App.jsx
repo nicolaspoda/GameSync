@@ -101,7 +101,7 @@ function App() {
       {showLobbyPage && (
         <header className="app-header">
           <h1 className="game-title">Burn-out</h1>
-          <p className="game-subtitle">Jeu du pendu à deux joueurs</p>
+          <p className="game-subtitle">Le jeu</p>
         </header>
       )}
 

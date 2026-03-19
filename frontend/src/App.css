@@ -13,14 +13,14 @@
 }
 
 .game-title {
-  font-size: clamp(2.8rem, 4vw, 3.6rem);
+  font-size: clamp(5.6rem, 8vw, 7.2rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin: 0;
 }
 
 .game-subtitle {
-  margin-top: 8px;
+  margin: 8px 0 0;
   opacity: 0.8;
 }
 
