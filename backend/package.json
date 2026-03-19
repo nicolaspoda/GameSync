@@ -2,9 +2,10 @@
   "name": "gamesync",
   "version": "1.0.0",
   "type": "module",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
-    "dev": "node index.js"
+    "dev": "node --experimental-strip-types index.ts",
+    "start": "node --experimental-strip-types index.ts"
   },
   "keywords": [],
   "author": "",
