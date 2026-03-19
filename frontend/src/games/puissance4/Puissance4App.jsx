@@ -1,32 +1,42 @@
-import { useState } from 'react'
-import Puissance4Lobby from './Puissance4Lobby.jsx'
-import Puissance4PrivateRoomCreation from './Puissance4PrivateRoomCreation.jsx'
-import Puissance4Game from './Puissance4Game.jsx'
+import { useState } from "react";
+import Puissance4Lobby from "./Puissance4Lobby.jsx";
+import Puissance4PrivateRoomCreation from "./Puissance4PrivateRoomCreation.jsx";
+import Puissance4Game from "./Puissance4Game.jsx";
 
 const SCREENS = {
-  LOBBY: 'lobby',
-  PRIVATE_ROOM: 'private-room',
-  GAME: 'game',
-}
+  LOBBY: "lobby",
+  PRIVATE_ROOM: "private-room",
+  GAME: "game",
+};
 
 function Puissance4App() {
-  const [screen, setScreen] = useState(SCREENS.LOBBY)
-  const [currentRoom, setCurrentRoom] = useState(null)
+  const [screen, setScreen] = useState(SCREENS.LOBBY);
+  const [currentRoom, setCurrentRoom] = useState(null);
 
   const handleJoinRoom = ({ roomCode, roomName, playerId }) => {
-    setCurrentRoom({ code: roomCode, name: roomName, isPrivate: false, playerId })
-    setScreen(SCREENS.GAME)
-  }
+    setCurrentRoom({
+      code: roomCode,
+      name: roomName,
+      isPrivate: false,
+      playerId,
+    });
+    setScreen(SCREENS.GAME);
+  };
 
   const handlePrivateRoomCreated = ({ roomCode, roomName, playerId }) => {
-    setCurrentRoom({ code: roomCode, name: roomName, isPrivate: true, playerId })
-    setScreen(SCREENS.GAME)
-  }
+    setCurrentRoom({
+      code: roomCode,
+      name: roomName,
+      isPrivate: true,
+      playerId,
+    });
+    setScreen(SCREENS.GAME);
+  };
 
   const handleLeaveGame = () => {
-    setCurrentRoom(null)
-    setScreen(SCREENS.LOBBY)
-  }
+    setCurrentRoom(null);
+    setScreen(SCREENS.LOBBY);
+  };
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,125,96,0.18),_transparent_28%),linear-gradient(180deg,_#fff8ef_0%,_#f4efe7_100%)] px-6 py-10">
@@ -36,7 +46,7 @@ function Puissance4App() {
             GameSync
           </p>
           <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl">
-            Puissance 4, rebuilt to feel native inside the Game Hub.
+            Puissance 4
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-stone-600">
             Join a public room, host a private match, and play inside the same
@@ -63,7 +73,7 @@ function Puissance4App() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default Puissance4App
+export default Puissance4App;
