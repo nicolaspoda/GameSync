@@ -4,10 +4,10 @@ import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useGame }              from "@/games/tic-tac-toe/hooks/use-game";
 import type { TicTacToeSession } from "@/games/tic-tac-toe/socket";
 
-import WaitingScreen  from "@/games/tic-tac-toe/components/waiting-screen";
-import GameBoard      from "@/games/tic-tac-toe/components/game-board";
-import RoundResult    from "@/games/tic-tac-toe/components/round-result";
-import GameOver       from "@/games/tic-tac-toe/components/game-over";
+import WaitingScreen  from "../components/waiting-screen";
+import GameBoard      from "../components/game-board";
+import RoundResult    from "../components/round-result";
+import GameOver       from "../components/game-over";
 
 // ─── Session recovery ─────────────────────────────────────────────────────────
 
