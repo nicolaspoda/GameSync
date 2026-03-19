@@ -1,4 +1,12 @@
 import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import socket from './socket.js'
 import Puissance4Board from './Puissance4Board.jsx'
 import Puissance4Status from './Puissance4Status.jsx'
@@ -70,64 +78,94 @@ function Puissance4Game({ room, onLeave }) {
   const me = players.find((player) => player.id === room.playerId)
   const isMyTurn = me && me.color && me.color === gameState.currentPlayer
   const canPlay = players.length >= 2 && !gameState.winner && isMyTurn
+  const boardDescription =
+    players.length < 2
+      ? "Waiting for a second player before the first token can drop."
+      : canPlay
+        ? 'Your turn. Pick the column where you want to play.'
+        : gameState.winner
+          ? 'This round is over. Restart to play again.'
+          : 'Watch the board and wait for your next turn.'
 
   return (
-    <section className="p4-screen">
-      <header className="p4-header">
+    <section className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2>Puissance 4 - Partie</h2>
-          <p className="p4-room-subtitle">
-            Salle&nbsp;: <strong>{room.name}</strong> ({room.code})
+          <p className="text-sm font-medium uppercase tracking-[0.28em] text-amber-700/80">
+            Live Match
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold text-stone-900">
+            {room.name}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-stone-600">
+            Room code: <span className="font-mono font-medium text-stone-900">{room.code}</span>
           </p>
         </div>
-        <button className="ghost-button" type="button" onClick={handleLeave}>
+        <Button type="button" variant="outline" onClick={handleLeave}>
           Retour au lobby
-        </button>
-      </header>
+        </Button>
+      </div>
 
-      <div className="p4-game-layout">
-        <div className="p4-panel">
-          <Puissance4Board
-            board={gameState.board}
-            onClickColumn={handleClickColumn}
-            disabled={!canPlay}
-          />
-        </div>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(300px,0.9fr)]">
+        <Card className="border border-stone-200/80 bg-white/90 shadow-[0_24px_80px_rgba(60,42,17,0.10)]">
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-2xl text-stone-900">Game Board</CardTitle>
+            <CardDescription className="text-sm leading-6 text-stone-600">
+              {boardDescription}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Puissance4Board
+              board={gameState.board}
+              onClickColumn={handleClickColumn}
+              disabled={!canPlay}
+            />
+          </CardContent>
+        </Card>
 
-        <div className="p4-sidebar">
-          <div className="p4-panel">
-            <Puissance4Status gameState={gameState} roomCode={room.code} />
-          </div>
-          <div className="p4-panel">
-            <Puissance4Actions onRestart={handleRestart} onLeave={handleLeave} />
-          </div>
+        <div className="flex flex-col gap-6">
+          <Card className="border border-stone-200/80 bg-white/90 shadow-[0_24px_80px_rgba(60,42,17,0.10)]">
+            <CardContent className="pt-4">
+              <Puissance4Status
+                gameState={gameState}
+                roomCode={room.code}
+                currentPlayerId={room.playerId}
+              />
+            </CardContent>
+          </Card>
+          <Card className="border border-stone-200/80 bg-white/90 shadow-[0_24px_80px_rgba(60,42,17,0.10)]">
+            <CardContent className="pt-4">
+              <Puissance4Actions onRestart={handleRestart} onLeave={handleLeave} />
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       {gameState.winner && (
-        <div className="p4-modal-backdrop">
-          <div className="p4-modal">
-            <h3>Partie terminée</h3>
-            <p className="p4-modal-text">
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-stone-950/45 p-6 backdrop-blur-[2px]">
+          <div className="w-full max-w-sm rounded-[2rem] border border-stone-200 bg-white p-6 text-center shadow-[0_24px_80px_rgba(60,42,17,0.18)]">
+            <h3 className="text-2xl font-semibold text-stone-900">Partie terminée</h3>
+            <p className="mt-3 text-sm leading-6 text-stone-600">
               {gameState.winner === 'DRAW'
                 ? 'Match nul'
                 : `Victoire de ${gameState.winner === 'RED' ? 'Rouge' : 'Jaune'}`}
             </p>
-            <div className="p4-modal-actions">
-              <button
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Button
                 type="button"
-                className="primary-button"
+                className="h-10 flex-1"
                 onClick={handleRestart}
               >
                 Rejouer
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="primary-button"
+                className="h-10 flex-1"
+                variant="outline"
                 onClick={handleLeave}
               >
                 Quitter le lobby
-              </button>
+              </Button>
             </div>
           </div>
         </div>

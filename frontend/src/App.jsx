@@ -26,6 +26,7 @@ function App() {
           path="/guess-the-draw/room/:roomId"
           element={<GuessTheDrawRoom />}
         />
+        <Route path="/puissance4" element={<Puissance4App />} />
       </Routes>
       <Toaster />
     </>

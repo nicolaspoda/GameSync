@@ -34,12 +34,13 @@ export const gameCatalog: GameCatalogEntry[] = [
     status: "coming-soon",
   },
   {
-    id: "power4",
-    title: "Power 4",
+    id: "puissance4",
+    title: "Puissance 4",
     description: "A connect-four style battle with clean turns and quick rematches.",
     accentClassName:
       "bg-[radial-gradient(circle_at_top_left,_rgba(255,125,96,0.20),_transparent_52%),linear-gradient(180deg,_#fff7f2_0%,_#f3e7df_100%)]",
-    status: "coming-soon",
+    launchPath: "/puissance4",
+    status: "available",
   },
 ];
 
