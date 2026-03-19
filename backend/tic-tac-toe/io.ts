@@ -193,93 +193,86 @@ function handlePlayerReady(
 // ─── game:move ────────────────────────────────────────────────────────────────
 
 function handlePlayMove(
-  io: TicTacToeIoServer,
-  socket: TicTacToeSocket,
-  sessionStore: TicTacToeSessionStore,
-  roomId: string,
-  playerId: string,
-  index: number,
-): void {
-  const state = sessionStore.getRoomState(roomId);
-  if (!state) return;
-
-  // Validation
-  const validation = validateMove(state, playerId, index);
-  if (!validation.ok) {
-    socket.emit(ticTacToeServerEvents.error, {
-      code:    validation.code,
-      message: validation.message,
-    });
-    return;
+    io: TicTacToeIoServer,
+    socket: TicTacToeSocket,
+    sessionStore: TicTacToeSessionStore,
+    roomId: string,
+    playerId: string,
+    index: number,
+  ): void {
+    const state = sessionStore.getRoomState(roomId);
+    if (!state) return;
+  
+    const validation = validateMove(state, playerId, index);
+    if (!validation.ok) {
+      socket.emit(ticTacToeServerEvents.error, {
+        code:    validation.code,
+        message: validation.message,
+      });
+      return;
+    }
+  
+    const afterMove    = applyMove(state, playerId, index);
+    const afterResolve = resolveRound(afterMove);
+  
+    sessionStore.setRoomState(roomId, () => afterResolve);
+    emitToRoom(io, roomId, ticTacToeServerEvents.movePlayed, afterResolve);
+  
+    if (afterResolve.status === "ROUND_FINISHED") {
+      emitToRoom(io, roomId, ticTacToeServerEvents.roundFinished, afterResolve);
+  
+      // ✅ Auto-démarre le round suivant après 3 secondes
+      setTimeout(() => {
+        const current = sessionStore.getRoomState(roomId);
+        if (!current || current.status !== "ROUND_FINISHED") return;
+  
+        const nextRound = startNewRound(current);
+        sessionStore.setRoomState(roomId, () => nextRound);
+        emitToRoom(io, roomId, ticTacToeServerEvents.gameStarted, nextRound);
+      }, 3000);
+  
+      return;
+    }
+  
+    if (afterResolve.status === "GAME_FINISHED") {
+      emitToRoom(io, roomId, ticTacToeServerEvents.gameFinished, afterResolve);
+  
+      sessionStore.scheduleCleanup(roomId, () => {
+        console.log(`Room ${roomId} cleaned up after game finished.`);
+      });
+    }
   }
-
-  // Applique le move
-  const afterMove = applyMove(state, playerId, index);
-
-  // Vérifie victoire / nul
-  const afterResolve = resolveRound(afterMove);
-
-  sessionStore.setRoomState(roomId, () => afterResolve);
-
-  // Émet le move à toute la room
-  emitToRoom(io, roomId, ticTacToeServerEvents.movePlayed, afterResolve);
-
-  // Si la manche est terminée
-  if (afterResolve.status === "ROUND_FINISHED") {
-    emitToRoom(io, roomId, ticTacToeServerEvents.roundFinished, afterResolve);
-    return;
-  }
-
-  // Si la partie est terminée
-  if (afterResolve.status === "GAME_FINISHED") {
-    emitToRoom(io, roomId, ticTacToeServerEvents.gameFinished, afterResolve);
-
-    // Planifie le nettoyage de la room
-    sessionStore.scheduleCleanup(roomId, () => {
-      sessionStore.getRoomStore(roomId); // room déjà supprimée par scheduleCleanup
-    });
-  }
-}
 
 // ─── game:restart ─────────────────────────────────────────────────────────────
-
 function handleRestart(
-  io: TicTacToeIoServer,
-  socket: TicTacToeSocket,
-  sessionStore: TicTacToeSessionStore,
-  roomId: string,
-  playerId: string,
-): void {
-  const state = sessionStore.getRoomState(roomId);
-
-  if (!state || state.status !== "GAME_FINISHED") {
-    socket.emit(ticTacToeServerEvents.error, {
-      code:    "NOT_GAME_FINISHED",
-      message: "Cannot restart a game that is not finished.",
-    });
-    return;
+    io: TicTacToeIoServer,
+    socket: TicTacToeSocket,
+    sessionStore: TicTacToeSessionStore,
+    roomId: string,
+    playerId: string,
+  ): void {
+    const state = sessionStore.getRoomState(roomId);
+  
+    if (!state || state.status !== "GAME_FINISHED") {
+      socket.emit(ticTacToeServerEvents.error, {
+        code:    "NOT_GAME_FINISHED",
+        message: "Cannot restart a game that is not finished.",
+      });
+      return;
+    }
+  
+    const store = sessionStore.getRoomStore(roomId);
+    if (!store) return;
+  
+    // ✅ Premier joueur qui clique redémarre immédiatement
+    sessionStore.cancelCleanup(roomId);
+    store.restartVotes.clear();
+    store.readyPlayers.clear();
+  
+    const restartState = buildRestartState(state);
+    sessionStore.setRoomState(roomId, () => restartState);
+    emitToRoom(io, roomId, ticTacToeServerEvents.gameStarted, restartState);
   }
-
-  const store = sessionStore.getRoomStore(roomId);
-  if (!store) return;
-
-  store.restartVotes.add(playerId);
-
-  // Annule le cleanup tant que les deux n'ont pas voté
-  sessionStore.cancelCleanup(roomId);
-
-  const allVoted = store.restartVotes.size === TIC_TAC_TOE_CONFIG.MAX_PLAYERS;
-  if (!allVoted) return; // Attend l'autre joueur
-
-  // Réinitialise complètement
-  store.restartVotes.clear();
-  store.readyPlayers.clear();
-
-  const restartState = buildRestartState(state);
-  sessionStore.setRoomState(roomId, () => restartState);
-
-  emitToRoom(io, roomId, ticTacToeServerEvents.gameStarted, restartState);
-}
 
 // ─── disconnect ───────────────────────────────────────────────────────────────
 
