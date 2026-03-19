@@ -12,6 +12,7 @@
     "types": ["node"]
   },
   "include": [
+    "server.ts",
     "guess-the-draw/**/*.ts",
     "puissance4/**/*.ts",
     "hangman/**/*.ts",

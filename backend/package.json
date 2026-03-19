@@ -1,16 +1,16 @@
 {
   "name": "gamesync",
   "version": "1.0.0",
-  "main": "dist/hangman/index.js",
+  "main": "dist/server.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "guess-the-draw": "node dist/guess-the-draw/server.js",
-    "hangman": "node dist/hangman/index.js",
-    "puissance4": "node dist/puissance4/index.js",
-    "tic-tac-toe": "node dist/tic-tac-toe/index.js",
+    "hangman": "node dist/hangman/server.js",
+    "puissance4": "node dist/puissance4/server.js",
+    "tic-tac-toe": "node dist/tic-tac-toe/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node dist/hangman/index.js",
-    "dev": "nodemon --watch . --ext ts,json --ignore dist --ignore node_modules --exec \"npm run build && node dist/hangman/index.js\""
+    "start": "node dist/server.js",
+    "dev": "nodemon --watch . --ext ts,json --ignore dist --ignore node_modules --exec \"npm run build && node dist/server.js\""
   },
   "keywords": [],
   "author": "",
