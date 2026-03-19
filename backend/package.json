@@ -1,16 +1,28 @@
 {
   "name": "gamesync",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/puissance4/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -p tsconfig.json",
+    "guess-the-draw": "node dist/guess-the-draw/server.js",
+    "puissance4": "node dist/puissance4/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node dist/puissance4/index.js",
+    "dev": "nodemon --watch . --ext ts,json --ignore dist --ignore node_modules --exec \"npm run build && node dist/puissance4/index.js\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "cors": "^2.8.6",
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/cors": "^2.8.19",
+    "@types/node": "^24.6.1",
+    "typescript": "^5.9.3"
   }
 }
