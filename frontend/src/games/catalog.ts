@@ -31,7 +31,8 @@ export const gameCatalog: GameCatalogEntry[] = [
     description: "Classic word guessing with multiplayer twists and shared pacing.",
     accentClassName:
       "bg-[radial-gradient(circle_at_top_left,_rgba(145,210,160,0.22),_transparent_50%),linear-gradient(180deg,_#f4fbf4_0%,_#e7efe8_100%)]",
-    status: "coming-soon",
+    launchPath: "/hangman",
+    status: "available",
   },
   {
     id: "puissance4",
