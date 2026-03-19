@@ -7,7 +7,8 @@ import GuessTheDrawRoom from "./games/guess-the-draw/pages/room";
 import { Toaster } from "@/components/ui/sonner";
 import HomePage from "./pages/home";
 import GamePlayerPage from "./pages/game-player";
-
+import JoinTicTacToe from "./games/tic-tac-toe/pages/join";
+import TicTacToeRoom from "./games/tic-tac-toe/pages/room";
 function App() {
   return (
     <>
