@@ -31,6 +31,11 @@
   align-items: stretch;
 }
 
+.app-main--lobby {
+  grid-template-columns: minmax(0, 520px);
+  justify-content: center;
+}
+
 .welcome-card {
   border-radius: 16px;
   padding: 24px 20px;

@@ -33,11 +33,22 @@ function createRoomState() {
 }
 
 function getPublicState(roomState) {
-  const { word, guesses, wrongCounts, currentPlayer, status, winner } = roomState
+  const { word, guesses, wrongCounts, currentPlayer, status, winner, players } = roomState
   const wordMask = word
     .split('')
     .map((ch) => (guesses.includes(ch) ? ch : '_'))
     .join(' ')
+
+  const playersByNumber = {
+    1: null,
+    2: null,
+  }
+
+  for (const player of Object.values(players ?? {})) {
+    if (!player) continue
+    if (player.playerNumber !== 1 && player.playerNumber !== 2) continue
+    playersByNumber[player.playerNumber] = player.username ?? null
+  }
 
   return {
     wordLength: word.length,
@@ -47,6 +58,7 @@ function getPublicState(roomState) {
     currentPlayer,
     status,
     winner,
+    players: playersByNumber,
   }
 }
 

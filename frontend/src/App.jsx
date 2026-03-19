@@ -77,6 +77,11 @@ function App() {
     return ''
   }, [gameState, playerNumber])
 
+  const player1Name = useMemo(() => gameState?.players?.[1] ?? 'Joueur 1', [gameState])
+  const player2Name = useMemo(() => gameState?.players?.[2] ?? 'Joueur 2', [gameState])
+
+  const showLobbyPage = !isInGame
+
   return (
     <div className="app-root">
       <header className="app-header">
@@ -84,123 +89,125 @@ function App() {
         <p className="game-subtitle">Jeu du pendu à deux joueurs</p>
       </header>
 
-      <main className="app-main">
-        <section className="welcome-card">
-          <h2 className="welcome-title">Rejoins une partie</h2>
+      {showLobbyPage ? (
+        <main className="app-main app-main--lobby">
+          <section className="welcome-card">
+            <h2 className="welcome-title">Rejoins une partie</h2>
 
-          <div className="form-row">
-            <label htmlFor="username" className="form-label">
-              Nom d&apos;utilisateur
-            </label>
-            <input
-              id="username"
-              className="text-input"
-              type="text"
-              placeholder="Ex : PlayerOne"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
-
-          <div className="form-row">
-            <label htmlFor="room" className="form-label">
-              Code de room (optionnel)
-            </label>
-            <input
-              id="room"
-              className="text-input"
-              type="text"
-              placeholder="Laisse vide pour en créer une"
-              value={room}
-              onChange={(e) => setRoom(e.target.value.toUpperCase())}
-            />
-          </div>
-
-          {error && <p className="error-text">{error}</p>}
-
-          <button
-            className="primary-button"
-            type="button"
-            onClick={handleJoinRoom}
-            disabled={joining}
-          >
-            {joining ? 'Connexion...' : 'Créer ou entrer dans une room'}
-          </button>
-
-          {room && (
-            <p className="info-text">
-              Room : <strong>{room}</strong> —{' '}
-              {playerNumber ? `Tu es le joueur ${playerNumber}.` : 'Spectateur.'}
-            </p>
-          )}
-
-          {isInGame && <p className="info-text status-text">{statusLabel}</p>}
-        </section>
-
-        <section className="layout-preview">
-          <div className="hangman-column">
-            <div className="hangman-placeholder">
-              <div className="hangman-label">Joueur 1</div>
-              <div className="hangman-body">
-                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 0 ? 'visible' : ''}`} />
-                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 1 ? 'visible' : ''}`} />
-                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 2 ? 'visible' : ''}`} />
-                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 3 ? 'visible' : ''}`} />
-                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 4 ? 'visible' : ''}`} />
-                <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 5 ? 'visible' : ''}`} />
-              </div>
-              <div className="error-count">
-                Erreurs : {gameState?.wrongCounts?.[1] ?? 0} / 6
-              </div>
+            <div className="form-row">
+              <label htmlFor="username" className="form-label">
+                Nom d&apos;utilisateur
+              </label>
+              <input
+                id="username"
+                className="text-input"
+                type="text"
+                placeholder="Nom d'utilisateur"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
             </div>
-          </div>
 
-          <div className="center-column">
-            <div className="word-placeholder">
-              {gameState?.wordMask ?? '_ _ _ _ _'}
+            <div className="form-row">
+              <label htmlFor="room" className="form-label">
+                Code de room (optionnel)
+              </label>
+              <input
+                id="room"
+                className="text-input"
+                type="text"
+                placeholder="Laisse vide pour créer une room"
+                value={room}
+                onChange={(e) => setRoom(e.target.value.toUpperCase())}
+              />
             </div>
-            <div className="alphabet-grid">
-              {ALPHABET.map((letter) => {
-                const already = gameState?.guesses?.includes(letter)
-                const disabled =
-                  !isInGame ||
-                  already ||
-                  gameState?.status !== 'playing' ||
-                  gameState?.currentPlayer !== playerNumber
 
-                return (
-                  <button
-                    key={letter}
-                    type="button"
-                    className={`alpha-button ${already ? 'alpha-used' : ''}`}
-                    disabled={disabled}
-                    onClick={() => handleGuess(letter)}
-                  >
-                    {letter}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+            {error && <p className="error-text">{error}</p>}
 
-          <div className="hangman-column">
-            <div className="hangman-placeholder">
-              <div className="hangman-label">Joueur 2</div>
-              <div className="hangman-body">
-                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 0 ? 'visible' : ''}`} />
-                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 1 ? 'visible' : ''}`} />
-                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 2 ? 'visible' : ''}`} />
-                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 3 ? 'visible' : ''}`} />
-                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 4 ? 'visible' : ''}`} />
-                <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 5 ? 'visible' : ''}`} />
-              </div>
-              <div className="error-count">
-                Erreurs : {gameState?.wrongCounts?.[2] ?? 0} / 6
+            <button
+              className="primary-button"
+              type="button"
+              onClick={handleJoinRoom}
+              disabled={joining}
+            >
+              {joining ? 'Connexion...' : 'Créer ou entrer dans une room'}
+            </button>
+          </section>
+        </main>
+      ) : (
+        <main className="app-main">
+          <section className="welcome-card">
+            <h2 className="welcome-title">Partie en cours</h2>
+
+            {room && (
+              <p className="info-text">
+                Room : <strong>{room}</strong> —{' '}
+                {playerNumber ? `Tu es le joueur ${playerNumber}.` : 'Spectateur.'}
+              </p>
+            )}
+
+            {isInGame && <p className="info-text status-text">{statusLabel}</p>}
+          </section>
+
+          <section className="layout-preview">
+            <div className="hangman-column">
+              <div className="hangman-placeholder">
+                <div className="hangman-label">{player1Name}</div>
+                <div className="hangman-body">
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 0 ? 'visible' : ''}`} />
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 1 ? 'visible' : ''}`} />
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 2 ? 'visible' : ''}`} />
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 3 ? 'visible' : ''}`} />
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 4 ? 'visible' : ''}`} />
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[1] > 5 ? 'visible' : ''}`} />
+                </div>
+                <div className="error-count">Erreurs : {gameState?.wrongCounts?.[1] ?? 0} / 6</div>
               </div>
             </div>
-          </div>
-        </section>
-      </main>
+
+            <div className="center-column">
+              <div className="word-placeholder">{gameState?.wordMask ?? '_ _ _ _ _'}</div>
+              <div className="alphabet-grid">
+                {ALPHABET.map((letter) => {
+                  const already = gameState?.guesses?.includes(letter)
+                  const disabled =
+                    !isInGame ||
+                    already ||
+                    gameState?.status !== 'playing' ||
+                    gameState?.currentPlayer !== playerNumber
+
+                  return (
+                    <button
+                      key={letter}
+                      type="button"
+                      className={`alpha-button ${already ? 'alpha-used' : ''}`}
+                      disabled={disabled}
+                      onClick={() => handleGuess(letter)}
+                    >
+                      {letter}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="hangman-column">
+              <div className="hangman-placeholder">
+                <div className="hangman-label">{player2Name}</div>
+                <div className="hangman-body">
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 0 ? 'visible' : ''}`} />
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 1 ? 'visible' : ''}`} />
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 2 ? 'visible' : ''}`} />
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 3 ? 'visible' : ''}`} />
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 4 ? 'visible' : ''}`} />
+                  <div className={`hangman-part ${gameState?.wrongCounts?.[2] > 5 ? 'visible' : ''}`} />
+                </div>
+                <div className="error-count">Erreurs : {gameState?.wrongCounts?.[2] ?? 0} / 6</div>
+              </div>
+            </div>
+          </section>
+        </main>
+      )}
     </div>
   )
 }
