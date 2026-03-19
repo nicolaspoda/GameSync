@@ -14,7 +14,7 @@ const io = new Server(server, {
 
 const ROOMS = new Map()
 
-const WORDS = ['SOCKET', 'REACT', 'JAVASCRIPT', 'PENDU', 'BURNOUT', 'GAMESYNC']
+const WORDS = ['METAAAAAL', 'HELLFEST', 'MOUDENC']
 
 function createRoomState() {
   const word = WORDS[Math.floor(Math.random() * WORDS.length)]
