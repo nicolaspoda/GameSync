@@ -127,7 +127,7 @@ export default function JoinGuessTheDraw() {
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-stone-600">
               Pick a name, join a public lobby, and let the socket session spin
-              up behind the scenes. Private rooms stay one click away.
+              up automatically. Private rooms stay one click away.
             </p>
 
             <div className="mt-10 grid gap-4 sm:grid-cols-3">
@@ -164,8 +164,8 @@ export default function JoinGuessTheDraw() {
                 Join A Random Room
               </CardTitle>
               <CardDescription className="text-sm leading-6 text-stone-600">
-                For now, a successful join will connect the socket and log the
-                returned session in the console instead of redirecting.
+                Enter a display name, connect instantly, and move straight into
+                the live room.
               </CardDescription>
             </CardHeader>
 
