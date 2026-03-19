@@ -750,6 +750,15 @@ export function createGuessTheDrawIo(
         return;
       }
 
+      if (currentRoomState.status === "finished") {
+        resetGame(session.roomId);
+        emitRoomStateToActivePlayers(
+          session.roomId,
+          guessTheDrawServerEvents.roomState,
+        );
+        return;
+      }
+
       if (currentRoomState.players.length < 2) {
         socket.emit(guessTheDrawServerEvents.error, {
           code: "not-enough-players",
@@ -759,14 +768,6 @@ export function createGuessTheDrawIo(
       }
 
       resetGame(session.roomId);
-
-      if (currentRoomState.status === "finished") {
-        emitRoomStateToActivePlayers(
-          session.roomId,
-          guessTheDrawServerEvents.roomState,
-        );
-        return;
-      }
 
       const drawerId =
         getNextDrawerId(session.roomId, null) ?? session.playerId;

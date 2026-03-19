@@ -84,17 +84,20 @@ export default function CreatePrivateRoom() {
     const loadingToastId = toast.loading("Creating a private room...");
 
     try {
-      const response = await fetch(`${getGuessTheDrawApiUrl()}/guess-the-draw/rooms/private`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${getGuessTheDrawApiUrl()}/guess-the-draw/rooms/private`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            playerName: trimmedPlayerName,
+            maxPlayers: Number(maxPlayerCount),
+            rounds: Number(roundCount),
+          }),
         },
-        body: JSON.stringify({
-          playerName: trimmedPlayerName,
-          maxPlayers: Number(maxPlayerCount),
-          rounds: Number(roundCount),
-        }),
-      });
+      );
 
       const data = (await response.json()) as
         | CreatePrivateRoomResponse
@@ -181,10 +184,6 @@ export default function CreatePrivateRoom() {
               <CardTitle className="text-2xl text-stone-900">
                 Create A Private Room
               </CardTitle>
-              <CardDescription className="text-sm leading-6 text-stone-600">
-                The layout is now aligned with the join page. Room creation can
-                plug into the REST flow next.
-              </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-5">
