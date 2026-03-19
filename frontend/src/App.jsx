@@ -118,7 +118,7 @@ function App() {
                 id="username"
                 className="text-input"
                 type="text"
-                placeholder="Ex : PlayerOne"
+                placeholder="Nom d'utilisateur"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -132,7 +132,7 @@ function App() {
                 id="room"
                 className="text-input"
                 type="text"
-                placeholder="Laisse vide pour en créer une"
+                placeholder="Laisser vide pour créer une room"
                 value={room}
                 onChange={(e) => setRoom(e.target.value.toUpperCase())}
               />
