@@ -36,6 +36,18 @@
   justify-content: center;
 }
 
+.app-game {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.app-game .welcome-card {
+  max-width: 720px;
+  width: 100%;
+  align-self: center;
+}
+
 .welcome-card {
   border-radius: 16px;
   padding: 24px 20px;
@@ -257,6 +269,10 @@
 
   .app-main {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-game .welcome-card {
+    max-width: 100%;
   }
 
   .layout-preview {

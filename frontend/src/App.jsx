@@ -84,10 +84,12 @@ function App() {
 
   return (
     <div className="app-root">
-      <header className="app-header">
-        <h1 className="game-title">Burn-out</h1>
-        <p className="game-subtitle">Jeu du pendu à deux joueurs</p>
-      </header>
+      {showLobbyPage && (
+        <header className="app-header">
+          <h1 className="game-title">Burn-out</h1>
+          <p className="game-subtitle">Jeu du pendu à deux joueurs</p>
+        </header>
+      )}
 
       {showLobbyPage ? (
         <main className="app-main app-main--lobby">
@@ -102,7 +104,7 @@ function App() {
                 id="username"
                 className="text-input"
                 type="text"
-                placeholder="Nom d'utilisateur"
+                placeholder="Ex : PlayerOne"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -116,7 +118,7 @@ function App() {
                 id="room"
                 className="text-input"
                 type="text"
-                placeholder="Laisse vide pour créer une room"
+                placeholder="Laisse vide pour en créer une"
                 value={room}
                 onChange={(e) => setRoom(e.target.value.toUpperCase())}
               />
@@ -135,7 +137,7 @@ function App() {
           </section>
         </main>
       ) : (
-        <main className="app-main">
+        <main className="app-game">
           <section className="welcome-card">
             <h2 className="welcome-title">Partie en cours</h2>
 
