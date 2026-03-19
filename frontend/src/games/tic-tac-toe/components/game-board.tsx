@@ -1,4 +1,5 @@
 import type { TicTacToeRoomState } from "@/games/tic-tac-toe/socket";
+import SymbolAvatar, { getSymbolLabel } from "./symbol-avatar";
 
 type Props = {
   room:         TicTacToeRoomState;
@@ -33,10 +34,17 @@ export default function GameBoard({ room, selfPlayerId, onPlayMove }: Props) {
               <p className="text-xs font-medium uppercase tracking-widest text-stone-500">
                 {player.id === selfPlayerId ? "You" : "Opponent"}
               </p>
-              <p className="mt-1 text-sm font-semibold text-stone-800 truncate">
-                {player.username}
-                <span className="ml-2 text-stone-400">{player.symbol}</span>
-              </p>
+              <div className="mt-2 flex items-center justify-center gap-2">
+                <SymbolAvatar symbol={player.symbol} className="size-9" />
+                <div className="min-w-0 text-left">
+                  <p className="truncate text-sm font-semibold text-stone-800">
+                    {player.username}
+                  </p>
+                  <p className="text-xs text-stone-500">
+                    {getSymbolLabel(player.symbol)}
+                  </p>
+                </div>
+              </div>
               <p className="mt-1 text-2xl font-bold text-stone-900">{player.score}</p>
               {isActive && (
                 <p className="mt-1 text-xs text-blue-500 font-medium animate-pulse">
@@ -58,9 +66,8 @@ export default function GameBoard({ room, selfPlayerId, onPlayMove }: Props) {
               onClick={() => isPlayable && onPlayMove(index)}
               disabled={!isPlayable}
               className={`
-                aspect-square rounded-2xl border text-4xl font-bold
+                aspect-square rounded-2xl border
                 transition-all duration-150
-                ${cell === "X" ? "text-blue-600" : "text-rose-500"}
                 ${
                   isPlayable
                     ? "border-stone-200 bg-white hover:border-blue-300 hover:bg-blue-50 cursor-pointer"
@@ -68,7 +75,11 @@ export default function GameBoard({ room, selfPlayerId, onPlayMove }: Props) {
                 }
               `}
             >
-              {cell ?? ""}
+              {cell ? (
+                <div className="flex h-full items-center justify-center p-3">
+                  <SymbolAvatar symbol={cell} className="size-full max-h-20 max-w-20 border-0 bg-transparent p-0 shadow-none" />
+                </div>
+              ) : null}
             </button>
           );
         })}

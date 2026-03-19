@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import type { TicTacToeRoomState } from "@/games/tic-tac-toe/socket";
+import SymbolAvatar, { getSymbolLabel } from "./symbol-avatar";
 
 type Props = {
   room:         TicTacToeRoomState;
@@ -40,7 +41,17 @@ export default function GameOver({ room, selfPlayerId, onRestart, onLeave }: Pro
               <p className="text-xs font-medium uppercase tracking-widest text-stone-500">
                 {player.id === selfPlayerId ? "You" : "Opponent"}
               </p>
-              <p className="text-sm font-semibold text-stone-800 truncate">{player.username}</p>
+              <div className="flex items-center justify-center gap-2">
+                <SymbolAvatar symbol={player.symbol} className="size-10" />
+                <div className="min-w-0 text-left">
+                  <p className="truncate text-sm font-semibold text-stone-800">
+                    {player.username}
+                  </p>
+                  <p className="text-xs text-stone-500">
+                    {getSymbolLabel(player.symbol)}
+                  </p>
+                </div>
+              </div>
               <p className="text-2xl font-bold text-stone-900">{player.score}</p>
               {isWinner && <p className="text-xs font-medium text-blue-600">Winner</p>}
             </div>
