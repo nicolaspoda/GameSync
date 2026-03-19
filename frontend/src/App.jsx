@@ -10,6 +10,8 @@ import GamePlayerPage from "./pages/game-player";
 
 import Puissance4App from "./games/puissance4/Puissance4App.jsx";
 
+import HangmanApp from "./games/hangman/HangmanApp.tsx";
+
 function App() {
   return (
     <>
@@ -27,6 +29,7 @@ function App() {
           element={<GuessTheDrawRoom />}
         />
         <Route path="/puissance4" element={<Puissance4App />} />
+        <Route path="/hangman" element={<HangmanApp />} />
       </Routes>
       <Toaster />
     </>
